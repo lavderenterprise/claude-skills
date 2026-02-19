@@ -43,7 +43,7 @@ git add .
 git commit -m "Initial commit: Claude Skills Repository v1.0.0"
 
 # Add your GitHub repo as remote
-git remote add origin https://github.com/YOUR_USERNAME/claude-skills.git
+git remote add origin https://github.com/lavderenterprise/claude-skills.git
 
 # Push to GitHub
 git push -u origin main
@@ -113,9 +113,9 @@ Every skill needs:
 
 ### Update Repository Name
 Edit in these files:
-- `README.md` - Replace `YOUR_USERNAME`
-- `docs/CONTRIBUTING.md` - Replace `YOUR_USERNAME`
-- `docs/skill-template/SKILL.md` - Replace `YOUR_USERNAME`
+- `README.md` - Replace `lavderenterprise`
+- `docs/CONTRIBUTING.md` - Replace `lavderenterprise`
+- `docs/skill-template/SKILL.md` - Replace `lavderenterprise`
 
 ### Update Author Info
 - `LICENSE` - Add your name and year
@@ -129,7 +129,7 @@ Edit in these files:
 ```bash
 # Create new repo on GitHub (don't initialize with README)
 # Then:
-git remote add origin https://github.com/YOUR_USERNAME/claude-skills.git
+git remote add origin https://github.com/lavderenterprise/claude-skills.git
 git branch -M main
 git push -u origin main
 ```
@@ -222,10 +222,10 @@ Once on GitHub, users can install with:
 
 ```bash
 # Install all skills
-npx skills add https://github.com/YOUR_USERNAME/claude-skills --all
+npx skills add https://github.com/lavderenterprise/claude-skills --all
 
 # Install specific skill
-npx skills add https://github.com/YOUR_USERNAME/claude-skills \
+npx skills add https://github.com/lavderenterprise/claude-skills \
   --skill 'impreza-wpbakery-dev' -g -y
 ```
 
@@ -288,7 +288,7 @@ In `CHANGELOG.md`:
 
 Before pushing to GitHub:
 
-- [ ] Update `YOUR_USERNAME` in all files
+- [ ] Update `lavderenterprise` in all files
 - [ ] Customize LICENSE with your info
 - [ ] Test all skills locally
 - [ ] Write clear README descriptions

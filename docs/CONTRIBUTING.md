@@ -24,7 +24,7 @@ A good skill should:
 #### Step 1: Fork and Clone
 ```bash
 # Fork the repository on GitHub, then:
-git clone https://github.com/YOUR_USERNAME/claude-skills.git
+git clone https://github.com/lavderenterprise/claude-skills.git
 cd claude-skills
 ```
 
@@ -212,7 +212,7 @@ Copy this template as a starting point for new skills.
 
 ## ❓ Questions?
 
-- Open a [Discussion](https://github.com/YOUR_USERNAME/claude-skills/discussions)
+- Open a [Discussion](https://github.com/lavderenterprise/claude-skills/discussions)
 - Comment on existing issues
 - Check existing documentation first
 

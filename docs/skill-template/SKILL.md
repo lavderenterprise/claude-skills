@@ -308,8 +308,8 @@ Use semantic versioning.
 
 Found an issue or have a suggestion? 
 
-- Report issues: [GitHub Issues](https://github.com/YOUR_USERNAME/claude-skills/issues)
-- Submit improvements: [Pull Requests](https://github.com/YOUR_USERNAME/claude-skills/pulls)
+- Report issues: [GitHub Issues](https://github.com/lavderenterprise/claude-skills/issues)
+- Submit improvements: [Pull Requests](https://github.com/lavderenterprise/claude-skills/pulls)
 
 ---
 

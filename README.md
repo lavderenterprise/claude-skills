@@ -30,14 +30,14 @@ Transform designs (described, visual, or Figma) into production-ready WordPress 
 ### Option 1: Using npx skills (Recommended)
 
 ```bash
-npx skills add https://github.com/YOUR_USERNAME/claude-skills --skill 'impreza-wpbakery-dev' -g -y
+npx skills add https://github.com/lavderenterprise/claude-skills --skill 'impreza-wpbakery-dev' -g -y
 ```
 
 ### Option 2: Manual Installation
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/claude-skills.git
+   git clone https://github.com/lavderenterprise/claude-skills.git
    ```
 
 2. **Copy skills to Claude's directory:**
@@ -182,8 +182,8 @@ Want to contribute a skill? Open an issue or submit a PR!
 
 ## 📞 Support
 
-- **Issues:** [GitHub Issues](https://github.com/YOUR_USERNAME/claude-skills/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/YOUR_USERNAME/claude-skills/discussions)
+- **Issues:** [GitHub Issues](https://github.com/lavderenterprise/claude-skills/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/lavderenterprise/claude-skills/discussions)
 
 ---
 
