@@ -159,6 +159,32 @@ Code intended for WPBakery Classic Mode must be **compact** — shortcodes on si
 [/vc_column_text][/vc_column][/vc_row]
 ```
 
+### Rule 7: No Trailing Empty Rows
+
+Never add an empty row at the end of the generated output. The AI tends to append a blank row like:
+```
+[vc_row][vc_column][vc_column_text]
+[/vc_column_text][/vc_column][/vc_row]
+```
+
+This creates a visible empty section on the page. The generated code must end with the last meaningful `[/vc_row]` and nothing after it.
+
+### Rule 8: Inner Rows Always Have 1rem Padding
+
+Every `[vc_row_inner]` must include `css` with 1rem padding on all sides. Without this, inner row content touches the edges and looks broken.
+
+**❌ WRONG — No padding on inner row:**
+```
+[vc_row_inner columns="3"]
+```
+
+**✅ CORRECT — Always include 1rem padding:**
+```
+[vc_row_inner columns="3" css="%7B%22default%22%3A%7B%22padding-left%22%3A%221rem%22%2C%22padding-top%22%3A%221rem%22%2C%22padding-bottom%22%3A%221rem%22%2C%22padding-right%22%3A%221rem%22%7D%7D"]
+```
+
+The decoded JSON is: `{"default":{"padding-left":"1rem","padding-top":"1rem","padding-bottom":"1rem","padding-right":"1rem"}}`
+
 ---
 
 ## Architecture & Dual Builder System
@@ -240,7 +266,9 @@ Never use CSS padding to simulate narrow content areas. Always use the native `w
 
 ### Inner Rows & Columns (for Grids)
 
-For creating grid layouts (feature grids, card grids, testimonials), use `vc_row_inner` + `vc_column_inner` **inside** a parent `vc_row > vc_column`:
+For creating grid layouts (feature grids, card grids, testimonials), use `vc_row_inner` + `vc_column_inner` **inside** a parent `vc_row > vc_column`.
+
+**⚠️ Every `vc_row_inner` MUST have 1rem padding on all sides (see Rule 8).**
 
 **❌ WRONG — Multiple `vc_row` for a single grid:**
 ```
@@ -249,22 +277,23 @@ For creating grid layouts (feature grids, card grids, testimonials), use `vc_row
   [vc_column width="1/3"]Card 2[/vc_column]
   [vc_column width="1/3"]Card 3[/vc_column]
 [/vc_row]
-[vc_row gap="40px"]
-  [vc_column width="1/3"]Card 4[/vc_column]
-  [vc_column width="1/3"]Card 5[/vc_column]
-  [vc_column width="1/3"]Card 6[/vc_column]
-[/vc_row]
 ```
 
-**✅ CORRECT — Single `vc_row` with `vc_row_inner`:**
+**✅ CORRECT — Single `vc_row` with `vc_row_inner` + padding:**
 ```
-[vc_row][vc_column][vc_row_inner columns="3" tablets_columns="2"][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"]<!-- Card 1 content -->[/vc_column_inner][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"]<!-- Card 2 content -->[/vc_column_inner][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"]<!-- Card 3 content -->[/vc_column_inner][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"]<!-- Card 4 content -->[/vc_column_inner][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"]<!-- Card 5 content -->[/vc_column_inner][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"]<!-- Card 6 content -->[/vc_column_inner][/vc_row_inner][/vc_column][/vc_row]
+[vc_row][vc_column][vc_row_inner columns="3" tablets_columns="2" css="%7B%22default%22%3A%7B%22padding-left%22%3A%221rem%22%2C%22padding-top%22%3A%221rem%22%2C%22padding-bottom%22%3A%221rem%22%2C%22padding-right%22%3A%221rem%22%7D%7D"][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"]<!-- Card 1 -->[/vc_column_inner][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"]<!-- Card 2 -->[/vc_column_inner][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"]<!-- Card 3 -->[/vc_column_inner][/vc_row_inner][/vc_column][/vc_row]
+```
+
+**Simple inner row (single column content):**
+```
+[vc_row][vc_column width="1/1"][vc_row_inner css="%7B%22default%22%3A%7B%22padding-left%22%3A%221rem%22%2C%22padding-top%22%3A%221rem%22%2C%22padding-bottom%22%3A%221rem%22%2C%22padding-right%22%3A%221rem%22%7D%7D"][vc_column_inner width="1/1"][us_text text="Content inside inner row"][/vc_column_inner][/vc_row_inner][/vc_column][/vc_row]
 ```
 
 **`vc_row_inner` key parameters:**
 - `columns` — Number of columns: `"2"`, `"3"`, `"4"`, etc.
 - `tablets_columns` — Columns on tablet
 - `gap` — Gap between columns
+- `css` — **Required:** must always include 1rem padding (see Rule 8)
 
 ### Design Settings (Universal)
 
@@ -533,19 +562,66 @@ Used for icons with optional styling. Can be used as a standalone icon display o
 [vc_video link="https://www.youtube.com/watch?v=xxxxx" el_aspect="16-9"]
 ```
 
-### Accordion (`us_accordion`)
+### Accordion (`vc_tta_accordion`)
 
+Collapsible content sections. Uses `vc_tta_accordion` as wrapper and `vc_tta_section` for each panel.
+
+**Basic accordion:**
 ```
-[us_accordion][us_accordion_item title="First Section" active="1"]Content of first section.[/us_accordion_item][us_accordion_item title="Second Section"]Content of second section.[/us_accordion_item][/us_accordion]
+[vc_tta_accordion][vc_tta_section title="Sezione 1"][vc_column_text]
+Content of first section. Lorem ipsum dolor sit amet.
+[/vc_column_text][/vc_tta_section][vc_tta_section title="Sezione 2"][vc_column_text]
+Content of second section.
+[/vc_column_text][/vc_tta_section][/vc_tta_accordion]
 ```
 
-### Tabs (`us_tabs`)
+**⚠️ Correct shortcode names:**
+- Wrapper: `[vc_tta_accordion]` — NOT `[us_accordion]`
+- Sections: `[vc_tta_section title="..."]` — NOT `[us_accordion_item]`
+- Content inside sections: use `[vc_column_text]` or any other Impreza element
 
+### Tabs (`vc_tta_tabs`)
+
+Horizontal tabbed content. Uses `vc_tta_tabs` as wrapper and `vc_tta_section` for each tab.
+
+**Basic tabs:**
 ```
-[us_tabs layout="default" align="center"][us_tab title="Tab 1" active="1"]First tab content.[/us_tab][us_tab title="Tab 2"]Second tab content.[/us_tab][/us_tabs]
+[vc_tta_tabs][vc_tta_section title="Sezione 1"][vc_column_text]
+Content of first tab. Lorem ipsum dolor sit amet.
+[/vc_column_text][/vc_tta_section][vc_tta_section title="Sezione 2"][vc_column_text]
+Content of second tab.
+[/vc_column_text][/vc_tta_section][/vc_tta_tabs]
 ```
 
-**Tab layouts:** `default`, `modern`, `trendy`, `timeline`
+**⚠️ Correct shortcode names:**
+- Wrapper: `[vc_tta_tabs]` — NOT `[us_tabs]`
+- Sections: `[vc_tta_section title="..."]` — NOT `[us_tab]`
+
+### Vertical Tabs / Tour (`vc_tta_tour`)
+
+Same as tabs but with vertical tab navigation on the side.
+
+**Basic vertical tabs:**
+```
+[vc_tta_tour][vc_tta_section title="Sezione 1"][vc_column_text]
+Content of first section. Lorem ipsum dolor sit amet.
+[/vc_column_text][/vc_tta_section][vc_tta_section title="Sezione 2"][vc_column_text]
+Content of second section.
+[/vc_column_text][/vc_tta_section][/vc_tta_tour]
+```
+
+### Tabbed Elements Quick Reference
+
+| Element | Wrapper Shortcode | Section Shortcode |
+|---|---|---|
+| Accordion (collapsible) | `[vc_tta_accordion]` | `[vc_tta_section title="..."]` |
+| Tabs (horizontal) | `[vc_tta_tabs]` | `[vc_tta_section title="..."]` |
+| Vertical Tabs / Tour | `[vc_tta_tour]` | `[vc_tta_section title="..."]` |
+
+**Key points:**
+- All three use `[vc_tta_section]` for their inner panels — the wrapper determines the visual behavior
+- Content inside each section can be any Impreza element (`[vc_column_text]`, `[us_image]`, `[us_btn]`, etc.)
+- Each section requires a `title` parameter
 
 ### Popup (`us_popup`)
 
@@ -691,6 +767,9 @@ Used for icons with optional styling. Can be used as a standalone icon display o
 | Space between elements | `[us_separator size="small/large/custom"]` |
 | Buttons side-by-side | `[us_hwrapper]` containing multiple `[us_btn]` |
 | Name + Role stacked | `[us_vwrapper]` with two `[us_text]` elements |
+| Accordion / FAQ | `[vc_tta_accordion]` with `[vc_tta_section]` children |
+| Tabs (horizontal) | `[vc_tta_tabs]` with `[vc_tta_section]` children |
+| Tabs (vertical/side) | `[vc_tta_tour]` with `[vc_tta_section]` children |
 
 #### Step 3: Build the Shortcode Structure
 
@@ -738,7 +817,7 @@ At the end of the generated code, include a `## Notes` section listing:
 <h1>Da Figma a WordPress <span style="background: linear-gradient(90deg,#155DFC 0%,#4F39F6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">in un solo click</span></h1>
 [/vc_column_text][us_separator size="small"][vc_column_text css="%7B%22default%22%3A%7B%22text-align%22%3A%22center%22%7D%7D"]Smetti di perdere tempo con il coding manuale. La nostra AI converte i tuoi design Figma in siti WordPress pixel-perfect, veloci e ottimizzati per la SEO.[/vc_column_text][us_separator size="small"][us_hwrapper alignment="center" inner_items_gap="1rem" valign="middle"][us_btn label="Inizia la prova gratuita" icon="fas|arrow-right" iconpos="right" style="2"][us_btn label="Guarda la demo"][/us_hwrapper][/vc_column][/vc_row][vc_row][vc_column][us_image ratio_width="21" ratio_height="9" has_ratio="1" ratio="16x9" align="center" size="full" css="%7B%22default%22%3A%7B%22border-radius%22%3A%2216px%22%7D%7D" image="IMAGE_ID"][/vc_column][/vc_row][vc_row][vc_column][us_text css="%7B%22default%22%3A%7B%22color%22%3A%22%231447E6%22%2C%22text-align%22%3A%22center%22%2C%22font-size%22%3A%2216px%22%2C%22font-weight%22%3A%22400%22%2C%22text-transform%22%3A%22uppercase%22%7D%7D" text="Caratteristiche"][vc_column_text css="%7B%22default%22%3A%7B%22text-align%22%3A%22center%22%7D%7D"]
 <h2>Tutto ciò che serve per scalare</h2>
-La nostra tecnologia AI comprende il design meglio di qualsiasi altro strumento sul mercato.[/vc_column_text][us_separator size="large"][vc_row_inner columns="3" tablets_columns="2"][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"][us_iconbox icon="far|bolt" iconpos="left" alignment="left" size="24px" el_class="icone" color="custom" icon_color="#ffffff"][/us_iconbox][vc_column_text]
+La nostra tecnologia AI comprende il design meglio di qualsiasi altro strumento sul mercato.[/vc_column_text][us_separator size="large"][vc_row_inner columns="3" tablets_columns="2" css="%7B%22default%22%3A%7B%22padding-left%22%3A%221rem%22%2C%22padding-top%22%3A%221rem%22%2C%22padding-bottom%22%3A%221rem%22%2C%22padding-right%22%3A%221rem%22%7D%7D"][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"][us_iconbox icon="far|bolt" iconpos="left" alignment="left" size="24px" el_class="icone" color="custom" icon_color="#ffffff"][/us_iconbox][vc_column_text]
 <h5>Velocità Fulminea</h5>
 Converti design complessi in secondi, non giorni. Risparmia fino al 90% del tempo di sviluppo.[/vc_column_text][/vc_column_inner][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"][us_iconbox icon="far|code" iconpos="left" alignment="left" size="24px" el_class="icone" color="custom" icon_color="#ffffff"][/us_iconbox][vc_column_text]
 <h5>Codice Pulito</h5>
@@ -756,7 +835,7 @@ Best practices di sicurezza WordPress implementate di default in ogni conversion
 ### Testimonial Section Example
 
 ```
-[vc_row css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%7D%7D"][vc_column][us_text text="Scelto da migliaia di designer" tag="h3" css="%7B%22default%22%3A%7B%22text-align%22%3A%22center%22%7D%7D"][us_separator][vc_row_inner columns="3"][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23ffffff%22%2C%22border-radius%22%3A%2216px%22%2C%22box-shadow-h-offset%22%3A%220%22%2C%22box-shadow-v-offset%22%3A%221px%22%2C%22box-shadow-blur%22%3A%223px%22%2C%22box-shadow-spread%22%3A%220%22%2C%22box-shadow-color%22%3A%22%23000000%22%7D%7D"][us_hwrapper inner_items_gap="0rem"][us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox][us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox][us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox][us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox][us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox][/us_hwrapper][us_separator size="custom" height="10px"][vc_column_text css="%7B%22default%22%3A%7B%22color%22%3A%22%234A5565%22%2C%22font-size%22%3A%2216px%22%2C%22font-style%22%3A%22italic%22%7D%7D"]"Quote text goes here."[/vc_column_text][us_separator size="custom" height="30px"][us_hwrapper valign="middle"][us_image ratio_width="21" ratio_height="9" has_ratio="1" size="full" image="IMAGE_ID" style="circle" css="%7B%22default%22%3A%7B%22width%22%3A%2248px%22%2C%22height%22%3A%2248px%22%7D%7D"][us_vwrapper inner_items_gap="0rem"][us_text text="Author Name" css="%7B%22default%22%3A%7B%22font-size%22%3A%2216px%22%2C%22font-weight%22%3A%22700%22%7D%7D"][us_text text="Author Role" css="%7B%22default%22%3A%7B%22color%22%3A%22%236A7282%22%2C%22font-size%22%3A%2214px%22%7D%7D"][/us_vwrapper][/us_hwrapper][/vc_column_inner][/vc_row_inner][/vc_column][/vc_row]
+[vc_row css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%7D%7D"][vc_column][us_text text="Scelto da migliaia di designer" tag="h3" css="%7B%22default%22%3A%7B%22text-align%22%3A%22center%22%7D%7D"][us_separator][vc_row_inner columns="3" css="%7B%22default%22%3A%7B%22padding-left%22%3A%221rem%22%2C%22padding-top%22%3A%221rem%22%2C%22padding-bottom%22%3A%221rem%22%2C%22padding-right%22%3A%221rem%22%7D%7D"][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23ffffff%22%2C%22border-radius%22%3A%2216px%22%2C%22box-shadow-h-offset%22%3A%220%22%2C%22box-shadow-v-offset%22%3A%221px%22%2C%22box-shadow-blur%22%3A%223px%22%2C%22box-shadow-spread%22%3A%220%22%2C%22box-shadow-color%22%3A%22%23000000%22%7D%7D"][us_hwrapper inner_items_gap="0rem"][us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox][us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox][us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox][us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox][us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox][/us_hwrapper][us_separator size="custom" height="10px"][vc_column_text css="%7B%22default%22%3A%7B%22color%22%3A%22%234A5565%22%2C%22font-size%22%3A%2216px%22%2C%22font-style%22%3A%22italic%22%7D%7D"]"Quote text goes here."[/vc_column_text][us_separator size="custom" height="30px"][us_hwrapper valign="middle"][us_image ratio_width="21" ratio_height="9" has_ratio="1" size="full" image="IMAGE_ID" style="circle" css="%7B%22default%22%3A%7B%22width%22%3A%2248px%22%2C%22height%22%3A%2248px%22%7D%7D"][us_vwrapper inner_items_gap="0rem"][us_text text="Author Name" css="%7B%22default%22%3A%7B%22font-size%22%3A%2216px%22%2C%22font-weight%22%3A%22700%22%7D%7D"][us_text text="Author Role" css="%7B%22default%22%3A%7B%22color%22%3A%22%236A7282%22%2C%22font-size%22%3A%2214px%22%7D%7D"][/us_vwrapper][/us_hwrapper][/vc_column_inner][/vc_row_inner][/vc_column][/vc_row]
 ```
 
 ### CTA Section Example
@@ -792,9 +871,9 @@ Impreza uses these breakpoints:
 ### Responsive Strategies
 
 #### 1. Grid Column Adjustments
-Use `vc_row_inner` with `columns` and `tablets_columns`:
+Use `vc_row_inner` with `columns` and `tablets_columns` (always include 1rem padding):
 ```
-[vc_row_inner columns="3" tablets_columns="2"]
+[vc_row_inner columns="3" tablets_columns="2" css="%7B%22default%22%3A%7B%22padding-left%22%3A%221rem%22%2C%22padding-top%22%3A%221rem%22%2C%22padding-bottom%22%3A%221rem%22%2C%22padding-right%22%3A%221rem%22%7D%7D"]
 ```
 
 #### 2. Hide on Devices
@@ -1025,11 +1104,23 @@ Maintain WCAG AA standards (4.5:1 for normal text).
 
 #### Issue: Columns Not Responsive
 **Cause**: Using multiple `vc_row` instead of `vc_row_inner`
-**Solution**: Use `[vc_row_inner columns="3" tablets_columns="2"]`
+**Solution**: Use `[vc_row_inner columns="3" tablets_columns="2" css="%7B%22default%22%3A%7B%22padding-left%22%3A%221rem%22%2C%22padding-top%22%3A%221rem%22%2C%22padding-bottom%22%3A%221rem%22%2C%22padding-right%22%3A%221rem%22%7D%7D"]`
 
 #### Issue: Content not editable in builder
 **Cause**: Using `[us_html]` for standard elements
 **Solution**: Replace with native Impreza shortcodes
+
+#### Issue: Accordion or Tabs not rendering
+**Cause**: Using wrong shortcodes `[us_accordion]`, `[us_tabs]`
+**Solution**: Use `[vc_tta_accordion]`, `[vc_tta_tabs]`, or `[vc_tta_tour]` with `[vc_tta_section]` children
+
+#### Issue: Inner row content touching edges
+**Cause**: Missing padding on `[vc_row_inner]`
+**Solution**: Always add `css="%7B%22default%22%3A%7B%22padding-left%22%3A%221rem%22%2C%22padding-top%22%3A%221rem%22%2C%22padding-bottom%22%3A%221rem%22%2C%22padding-right%22%3A%221rem%22%7D%7D"`
+
+#### Issue: Empty section appearing at bottom of page
+**Cause**: Trailing empty row in generated code
+**Solution**: Remove any `[vc_row][vc_column][vc_column_text][/vc_column_text][/vc_column][/vc_row]` at the end
 
 #### Issue: Typography looks wrong
 **Cause**: Overriding font styles that should come from the theme
@@ -1063,14 +1154,18 @@ Maintain WCAG AA standards (4.5:1 for normal text).
 ✅ Use `[us_text]` for short labels, badges, and simple text
 ✅ Use `label=` for button text, numeric `style=` for button style
 ✅ Use `[vc_row_inner]` + `[vc_column_inner]` for grids
+✅ Always add 1rem padding on all sides to every `[vc_row_inner]`
 ✅ Use `width="custom" width_custom="Xpx"` for row width control
 ✅ Let the theme handle typography (sizes, weights, families)
 ✅ Use native Impreza elements for all standard components
 ✅ Output compact single-line code for Classic Mode
+✅ End the output with the last meaningful `[/vc_row]` — no trailing empty rows
 ✅ List ignored animations/effects in a Notes section
 ✅ Use `[us_separator]` for spacing between elements
 ✅ Use `[us_hwrapper]` for horizontal layouts (buttons, author info)
 ✅ Use `[us_vwrapper]` for vertical stacking with controlled gaps
+✅ Use `[vc_tta_accordion]` for accordions, `[vc_tta_tabs]` for tabs, `[vc_tta_tour]` for vertical tabs
+✅ Use `[vc_tta_section]` inside all tabbed elements (accordion, tabs, tour)
 ✅ Test on multiple devices and browsers
 ✅ Optimize images before upload
 ✅ Create child theme for customizations
@@ -1088,6 +1183,10 @@ Maintain WCAG AA standards (4.5:1 for normal text).
 ❌ Use inline `<img>`, `<i>`, `<div class="card">` HTML for standard components
 ❌ Use `[us_heading]` for headings — use `[vc_column_text]` with HTML tags instead
 ❌ Override theme typography in generated code
+❌ Add empty trailing rows at the end of output
+❌ Forget 1rem padding on `[vc_row_inner]`
+❌ Use `[us_accordion]`, `[us_tabs]` — these are wrong shortcodes
+❌ Use `[us_accordion_item]`, `[us_tab]` — use `[vc_tta_section]` instead
 
 ---
 
@@ -1103,11 +1202,23 @@ For quick encoding of common CSS properties:
 | `{"default":{"width":"48px","height":"48px"}}` | `%7B%22default%22%3A%7B%22width%22%3A%2248px%22%2C%22height%22%3A%2248px%22%7D%7D` |
 | `{"default":{"font-size":"14px","font-weight":"700"}}` | `%7B%22default%22%3A%7B%22font-size%22%3A%2214px%22%2C%22font-weight%22%3A%22700%22%7D%7D` |
 | `{"default":{"box-shadow-h-offset":"0","box-shadow-v-offset":"1px","box-shadow-blur":"3px","box-shadow-spread":"0","box-shadow-color":"#000000"}}` | `%7B%22default%22%3A%7B%22box-shadow-h-offset%22%3A%220%22%2C%22box-shadow-v-offset%22%3A%221px%22%2C%22box-shadow-blur%22%3A%223px%22%2C%22box-shadow-spread%22%3A%220%22%2C%22box-shadow-color%22%3A%22%23000000%22%7D%7D` |
+| `{"default":{"padding-left":"1rem","padding-top":"1rem","padding-bottom":"1rem","padding-right":"1rem"}}` | `%7B%22default%22%3A%7B%22padding-left%22%3A%221rem%22%2C%22padding-top%22%3A%221rem%22%2C%22padding-bottom%22%3A%221rem%22%2C%22padding-right%22%3A%221rem%22%7D%7D` |
 
 ---
 
 ## Version History
 
+- **v2.1.0** (2026-02-20): Bug fixes from testing
+  - Fixed: trailing empty rows `[vc_row][vc_column][vc_column_text][/vc_column_text][/vc_column][/vc_row]` (Rule 7)
+  - Fixed: `vc_row_inner` now always requires 1rem padding on all sides (Rule 8)
+  - Fixed: accordion shortcode — `[vc_tta_accordion]` + `[vc_tta_section]` instead of wrong `[us_accordion]` + `[us_accordion_item]`
+  - Fixed: tabs shortcode — `[vc_tta_tabs]` + `[vc_tta_section]` instead of wrong `[us_tabs]` + `[us_tab]`
+  - Added: vertical tabs / tour — `[vc_tta_tour]` + `[vc_tta_section]`
+  - Added: tabbed elements quick reference table
+  - Updated: all inner row examples now include required 1rem padding
+  - Updated: Figma-to-Impreza mapping table with accordion/tabs/tour
+  - Updated: DO/DON'T checklist with new rules
+  - Added: inner row 1rem padding to CSS encoding quick reference
 - **v2.0.0** (2026-02-20): Major rewrite — corrected critical errors
   - Fixed CSS format: Impreza JSON URL-encoded instead of `.vc_custom_xxx{}`
   - Fixed typography: theme handles h1–h6 styling, not generated code
