@@ -20,11 +20,144 @@ This skill enables you to transform designs into production-ready WordPress code
 
 | Task | Approach |
 |------|----------|
-| Design → Code | Use shortcode syntax with Impreza elements |
-| Responsive Layout | Use Design settings with device-specific controls |
-| Custom Styling | Combine Design settings + Custom CSS classes |
+| Design → Code | Use shortcode syntax with Impreza native elements |
+| Responsive Layout | Use `vc_row_inner`/`vc_column_inner` with `columns` param |
+| Custom Styling | Use `css` param with Impreza JSON URL-encoded format |
+| Typography | Let the theme handle it — use HTML tags inside `[vc_column_text]` |
+| Buttons | `[us_btn label="..." style="2"]` — use `label`, not `text` |
 | Dynamic Content | Use ACF integration + Grid Layouts |
 | Performance | Enable "Disable extra features of WPBakery" option |
+
+---
+
+## ⚠️ CRITICAL RULES — Read Before Generating Any Code
+
+These rules apply to ALL code generation. Violating them produces broken, non-functional output.
+
+### Rule 1: Impreza CSS Format (JSON URL-encoded)
+
+Impreza does **NOT** use the standard WPBakery CSS format. The old `.vc_custom_xxxxx{...}` syntax is **completely broken** in Impreza.
+
+**❌ WRONG — Will NOT work:**
+```
+css=".vc_custom_123{padding-top:80px;background-color:#F9FAFB;border-radius:16px;}"
+```
+
+**✅ CORRECT — Impreza JSON URL-encoded format:**
+```
+css="%7B%22default%22%3A%7B%22padding-top%22%3A%2280px%22%2C%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"
+```
+
+The JSON structure before encoding is:
+```json
+{"default":{"padding-top":"80px","background-color":"#F9FAFB","border-radius":"16px"}}
+```
+
+**Encoding rules:**
+- `{` → `%7B`
+- `}` → `%7D`
+- `"` → `%22`
+- `:` → `%3A`
+- `,` → `%2C`
+- `#` → `%23`
+- Space → `%20`
+
+**Common CSS properties available in the `css` param:**
+- `color`, `background-color`
+- `font-size`, `font-weight`, `font-style`, `line-height`
+- `text-align`, `text-transform`
+- `padding-top`, `padding-right`, `padding-bottom`, `padding-left`
+- `margin-top`, `margin-right`, `margin-bottom`, `margin-left`
+- `border-radius`
+- `width`, `height`, `max-width`
+- `box-shadow-h-offset`, `box-shadow-v-offset`, `box-shadow-blur`, `box-shadow-spread`, `box-shadow-color`
+
+### Rule 2: Typography Comes From the Theme
+
+Font styles (size, weight, line-height, font-family) for headings (h1–h6) and body text are managed globally by Impreza's Theme Options > Typography. When converting from Figma or any design:
+
+**❌ WRONG — Do NOT extract typography from Figma:**
+```
+[us_heading tag="h2" title="Title" size="36px" font_weight="800" color="#101828" css="...letter-spacing...line-height..."]
+```
+
+**✅ CORRECT — Use HTML tags, let the theme style them:**
+```
+[vc_column_text css="%7B%22default%22%3A%7B%22text-align%22%3A%22center%22%7D%7D"]
+<h2>Title</h2>
+[/vc_column_text]
+```
+
+**Key principle:** The code must only use the correct semantic HTML tag (h1, h2, h3, h4, h5, h6, p) and assume the theme provides the appropriate visual styling. Only override with CSS when there is a specific decorative need (e.g., a gradient text effect, a color that differs from the theme, specific alignment).
+
+### Rule 3: Never Abuse `[us_html]`
+
+`[us_html]` is for rare cases requiring custom HTML/JS that cannot be achieved with native elements. Using it for common elements (cards, icons, stars, images, buttons) is **forbidden** — it makes content non-editable in the builder.
+
+**❌ WRONG:**
+```
+[us_html]
+  <div class="feature-card">
+    <i class="fas fa-bolt"></i>
+    <h3>Title</h3>
+    <p>Description</p>
+  </div>
+[/us_html]
+```
+
+**✅ CORRECT — Use native shortcodes:**
+```
+[us_iconbox icon="far|bolt" iconpos="left" alignment="left" size="24px" color="custom" icon_color="#ffffff"][/us_iconbox][vc_column_text]
+<h5>Title</h5>
+Description[/vc_column_text]
+```
+
+### Rule 4: Buttons Use `label`, Not `text` — Style Is Numeric
+
+**❌ WRONG:**
+```
+[us_btn text="Click me" style="raised" color="custom" size="large"]
+```
+
+**✅ CORRECT:**
+```
+[us_btn label="Click me" style="2" iconpos="right"]
+```
+
+Button `style` values are numeric (e.g., `"1"`, `"2"`, `"3"`, etc.), corresponding to the button styles defined in Theme Options. Do not use string names like `"raised"`, `"flat"`, or `"outlined"`.
+
+### Rule 5: Animations & Effects Are Ignored
+
+If the Figma design contains animations (hover effects, scroll animations, transitions, parallax on elements, fade-ins, etc.), these must be:
+- **Ignored** in the generated code
+- **Listed in a notes section** at the end of the output, describing what was detected and suggesting manual configuration
+
+### Rule 6: Classic Mode Output Must Be Compact
+
+Code intended for WPBakery Classic Mode must be **compact** — shortcodes on single lines, no indentation, no multi-line formatting. Newlines are only allowed inside `[vc_column_text]` where HTML content requires them.
+
+**❌ WRONG — Multi-line formatted shortcodes:**
+```
+[vc_row 
+  height="auto" 
+  valign="middle" 
+  el_class="hero-section"
+]
+  [vc_column width="1/1" align="center"]
+    [us_heading 
+      tag="h1" 
+      title="Title"
+    ]
+  [/vc_column]
+[/vc_row]
+```
+
+**✅ CORRECT — Compact single-line:**
+```
+[vc_row][vc_column][vc_column_text css="%7B%22default%22%3A%7B%22text-align%22%3A%22center%22%7D%7D"]
+<h1>Title</h1>
+[/vc_column_text][/vc_column][/vc_row]
+```
 
 ---
 
@@ -41,10 +174,10 @@ Impreza's native visual editor with real-time WYSIWYG editing:
 Bundled, customized version optimized for Impreza:
 - **Backend Editor**: Schematic layout view for content-rich pages
 - **Frontend Editor**: Classic WYSIWYG interface
+- **Classic Mode**: Direct shortcode editing — **this is where generated code gets pasted**
 - **Modifications**: Impreza adds custom options, disables non-compatible features
-- **Classic Mode**: Direct shortcode editing
 
-**CRITICAL**: Both builders are fully interchangeable - pages created in one can be edited in the other.
+**CRITICAL**: Both builders are fully interchangeable — pages created in one can be edited in the other.
 
 ---
 
@@ -56,480 +189,433 @@ The foundational container for all layouts.
 
 **Basic Syntax:**
 ```
-[vc_row]
-  [vc_column width="1/1"]
-    <!-- Content here -->
-  [/vc_column]
-[/vc_row]
+[vc_row][vc_column]<!-- Content here -->[/vc_column][/vc_row]
 ```
 
-**Full-Width Section:**
+**Row with custom width:**
 ```
-[vc_row el_class="separate-section" full_width="stretch_row"]
-  [vc_column]
-    <!-- Full-width content (Revolution Slider, Google Maps, etc.) -->
-  [/vc_column]
-[/vc_row]
+[vc_row width="custom" width_custom="840px"][vc_column]<!-- Content -->[/vc_column][/vc_row]
+```
+
+**Row with background color:**
+```
+[vc_row css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%7D%7D"][vc_column]<!-- Content -->[/vc_column][/vc_row]
 ```
 
 **Common Row Parameters:**
-- `gap` - Column spacing: `0px`, `10px`, `20px`, `30px`, `40px`, `60px`
-- `columns_type` - Layout: `default`, `boxes` (with background), `small` (reduced padding)
-- `height` - Row height: `default`, `auto`, `small`, `medium`, `large`, `huge`, `full` (100vh)
-- `valign` - Vertical alignment: `top`, `middle`, `bottom`
-- `content_placement` - Content alignment: `top`, `middle`, `bottom`
-- `color_scheme` - Color scheme: `default`, `alternate`, `primary`, `secondary`, `custom`
-- `bg_color` - Background color (hex or color name)
-- `bg_image` - Background image URL
-- `bg_size` - Background size: `cover`, `contain`, `initial`
-- `bg_repeat` - Background repeat: `repeat`, `no-repeat`, `repeat-x`, `repeat-y`
-- `bg_attachment` - Background attachment: `scroll`, `fixed` (parallax base)
-- `parallax` - Enable parallax: `vertical`, `horizontal`, `still`, `fixed`
-- `parallax_speed` - Parallax speed factor: `0.1` to `2.0` (default `1`)
-- `parallax_reverse` - Reverse parallax direction: `yes`, `no`
+- `width` — `"custom"` to enable custom width
+- `width_custom` — Custom width value (e.g., `"840px"`, `"1200px"`)
+- `gap` — Column spacing: `0px`, `10px`, `20px`, `30px`, `40px`, `60px`
+- `columns_type` — Layout: `default`, `boxes` (with background), `small` (reduced padding)
+- `height` — Row height: `default`, `auto`, `small`, `medium`, `large`, `huge`, `full` (100vh)
+- `valign` — Vertical alignment: `top`, `middle`, `bottom`
+- `content_placement` — Content alignment: `top`, `middle`, `bottom`
+- `color_scheme` — Color scheme: `default`, `alternate`, `primary`, `secondary`, `custom`
+- `bg_color` — Background color (hex or color name)
+- `bg_image` — Background image URL
+- `bg_size` — Background size: `cover`, `contain`, `initial`
+- `parallax` — Enable parallax: `vertical`, `horizontal`, `still`, `fixed`
+- `parallax_speed` — Parallax speed factor: `0.1` to `2.0` (default `1`)
+- `css` — Impreza JSON URL-encoded CSS (see Rule 1)
 
-**Advanced Row Features:**
+**⚠️ Width Control:**
+Never use CSS padding to simulate narrow content areas. Always use the native `width` parameter:
 ```
-[vc_row 
-  gap="30px" 
-  height="large" 
-  valign="middle" 
-  color_scheme="alternate"
-  bg_image="https://example.com/bg.jpg"
-  bg_size="cover"
-  parallax="vertical"
-  parallax_speed="0.5"
-  css=".vc_custom_xxxxx{padding-top:80px;padding-bottom:80px;}"
-]
-  [vc_column width="1/2"]
-    <!-- Left column -->
-  [/vc_column]
-  [vc_column width="1/2"]
-    <!-- Right column -->
-  [/vc_column]
-[/vc_row]
+[vc_row width="custom" width_custom="896px"]
 ```
 
 ### Column Layouts (`vc_column`)
 
 **Standard Grid System:**
-- `1/1` - Full width (100%)
-- `1/2` - Half width (50%)
-- `1/3`, `2/3` - Third layouts
-- `1/4`, `3/4` - Quarter layouts
-- `1/5`, `2/5`, `3/5`, `4/5` - Fifth layouts
-- `1/6`, `5/6` - Sixth layouts
+- `1/1` — Full width (100%)
+- `1/2` — Half width (50%)
+- `1/3`, `2/3` — Third layouts
+- `1/4`, `3/4` — Quarter layouts
+- `1/5`, `2/5`, `3/5`, `4/5` — Fifth layouts
+- `1/6`, `5/6` — Sixth layouts
 
 **Column Parameters:**
-- `width` - Column width (see grid system above)
-- `offset` - Left offset: `vc_col-sm-offset-1` through `vc_col-sm-offset-11`
-- `align` - Text alignment: `left`, `center`, `right`
-- `valign` - Vertical alignment: `top`, `middle`, `bottom`
-- `bg_color` - Column background color
-- `text_color` - Text color scheme: `primary`, `secondary`, `custom`
+- `width` — Column width (see grid system above)
+- `css` — Impreza JSON URL-encoded CSS
 
-**Responsive Column Example:**
+### Inner Rows & Columns (for Grids)
+
+For creating grid layouts (feature grids, card grids, testimonials), use `vc_row_inner` + `vc_column_inner` **inside** a parent `vc_row > vc_column`:
+
+**❌ WRONG — Multiple `vc_row` for a single grid:**
 ```
-[vc_column width="1/3" width_md="1/2" width_sm="1/1"]
-  <!-- Desktop: 33.33%, Tablet: 50%, Mobile: 100% -->
-[/vc_column]
+[vc_row gap="40px"]
+  [vc_column width="1/3"]Card 1[/vc_column]
+  [vc_column width="1/3"]Card 2[/vc_column]
+  [vc_column width="1/3"]Card 3[/vc_column]
+[/vc_row]
+[vc_row gap="40px"]
+  [vc_column width="1/3"]Card 4[/vc_column]
+  [vc_column width="1/3"]Card 5[/vc_column]
+  [vc_column width="1/3"]Card 6[/vc_column]
+[/vc_row]
 ```
+
+**✅ CORRECT — Single `vc_row` with `vc_row_inner`:**
+```
+[vc_row][vc_column][vc_row_inner columns="3" tablets_columns="2"][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"]<!-- Card 1 content -->[/vc_column_inner][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"]<!-- Card 2 content -->[/vc_column_inner][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"]<!-- Card 3 content -->[/vc_column_inner][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"]<!-- Card 4 content -->[/vc_column_inner][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"]<!-- Card 5 content -->[/vc_column_inner][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"]<!-- Card 6 content -->[/vc_column_inner][/vc_row_inner][/vc_column][/vc_row]
+```
+
+**`vc_row_inner` key parameters:**
+- `columns` — Number of columns: `"2"`, `"3"`, `"4"`, etc.
+- `tablets_columns` — Columns on tablet
+- `gap` — Gap between columns
 
 ### Design Settings (Universal)
 
-All Impreza elements support unified Design settings:
+All Impreza elements support the `css` parameter using Impreza JSON URL-encoded format.
 
-**Spacing:**
-- `padding` - Internal spacing (top right bottom left)
-- `margin` - External spacing (top right bottom left)
-- Syntax: `10px 20px 10px 20px` or CSS calc/vars: `calc(var(--base-padding) * 2)`
+**Spacing example:**
+```
+css="%7B%22default%22%3A%7B%22padding-top%22%3A%2240px%22%2C%22padding-bottom%22%3A%2240px%22%7D%7D"
+```
+Which decodes to: `{"default":{"padding-top":"40px","padding-bottom":"40px"}}`
 
-**Colors & Backgrounds:**
-- `bg_color` - Background color
-- `bg_image` - Background image URL
-- `text_color` - Text color
-- `border_color` - Border color
-- `border_radius` - Border radius: `0px` to `100px`
-
-**Visibility:**
-- `hide_on_desktop` - Hide on desktop: `yes`, `no`
-- `hide_on_laptop` - Hide on laptops: `yes`, `no`
-- `hide_on_tablet` - Hide on tablets: `yes`, `no`
-- `hide_on_mobile` - Hide on mobiles: `yes`, `no`
+**Visibility (show/hide on devices):**
+- `hide_on_desktop` — Hide on desktop: `yes`, `no`
+- `hide_on_laptop` — Hide on laptops: `yes`, `no`
+- `hide_on_tablet` — Hide on tablets: `yes`, `no`
+- `hide_on_mobile` — Hide on mobiles: `yes`, `no`
 
 **Custom Classes & IDs:**
-- `el_class` - Custom CSS class
-- `el_id` - Custom HTML ID
-
-**Device-Specific Design:**
-```
-<!-- Mobile-only padding override -->
-[us_hwrapper 
-  padding="40px" 
-  padding_mobiles="20px"
-]
-  <!-- Content -->
-[/us_hwrapper]
-```
+- `el_class` — Custom CSS class
+- `el_id` — Custom HTML ID
 
 ---
 
-## Impreza Content Elements (63+ Available)
+## Impreza Content Elements
 
 ### Text & Typography
 
-#### Heading (`us_heading`)
+#### `[vc_column_text]` — Primary Text Element
+
+This is the **primary element for all text content** including headings. Use it whenever you need to output text with HTML tags. The theme handles the typography styling.
+
+**Heading:**
 ```
-[us_heading 
-  tag="h2"
-  title="Your Heading Text"
-  size="2rem"
-  align="center"
-  color="primary"
-  font_weight="700"
-]
+[vc_column_text css="%7B%22default%22%3A%7B%22text-align%22%3A%22center%22%7D%7D"]
+<h1>Main Page Title</h1>
+[/vc_column_text]
+```
+
+**Heading with decorative gradient span:**
+```
+[vc_column_text css="%7B%22default%22%3A%7B%22text-align%22%3A%22center%22%7D%7D"]
+<h1>Da Figma a WordPress <span style="background: linear-gradient(90deg,#155DFC 0%,#4F39F6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">in un solo click</span></h1>
+[/vc_column_text]
+```
+
+**Heading + paragraph together:**
+```
+[vc_column_text css="%7B%22default%22%3A%7B%22text-align%22%3A%22center%22%7D%7D"]
+<h2>Section Title</h2>
+Description paragraph goes here. The theme handles font sizes and weights.
+[/vc_column_text]
+```
+
+**When to use `[vc_column_text]`:**
+- All headings (h1–h6) — wrap the HTML tag inside
+- Paragraphs with mixed formatting
+- Text that contains HTML (spans, links, bold, italic)
+- Heading + description combos in the same block
+
+#### `[us_text]` — Simple Text Element
+
+Use for short, single-line text blocks that don't need HTML markup. Supports icon display.
+
+**Badge/label:**
+```
+[us_text text="Potenziato dall'Intelligenza Artificiale" css="%7B%22default%22%3A%7B%22color%22%3A%22%231447E6%22%2C%22text-align%22%3A%22center%22%2C%22font-size%22%3A%2214px%22%2C%22line-height%22%3A%222%22%2C%22font-weight%22%3A%22400%22%2C%22background-color%22%3A%22%23DBEAFE%22%2C%22width%22%3A%22fit-content%22%2C%22margin-left%22%3A%22auto%22%2C%22margin-right%22%3A%22auto%22%2C%22padding-left%22%3A%221rem%22%2C%22padding-right%22%3A%221rem%22%2C%22border-radius%22%3A%2220px%22%7D%7D" icon="far|stars"]
+```
+
+**Section label (uppercase):**
+```
+[us_text css="%7B%22default%22%3A%7B%22color%22%3A%22%231447E6%22%2C%22text-align%22%3A%22center%22%2C%22font-size%22%3A%2216px%22%2C%22font-weight%22%3A%22400%22%2C%22text-transform%22%3A%22uppercase%22%7D%7D" text="Caratteristiche"]
+```
+
+**Simple text with tag override:**
+```
+[us_text text="Scelto da migliaia di designer" tag="h3" css="%7B%22default%22%3A%7B%22text-align%22%3A%22center%22%7D%7D"]
 ```
 
 **Parameters:**
-- `tag` - HTML tag: `h1`, `h2`, `h3`, `h4`, `h5`, `h6`, `p`, `div`
-- `title` - Heading text
-- `size` - Font size (CSS units): `1.5rem`, `32px`, `clamp(1.5rem, 4vw, 3rem)`
-- `align` - Alignment: `left`, `center`, `right`
-- `color` - Color: `primary`, `secondary`, `custom`, hex color
-- `font_weight` - Weight: `300`, `400`, `600`, `700`, `900`
-- `transform` - Text transform: `none`, `uppercase`, `lowercase`, `capitalize`
-- `icon` - Icon name (Font Awesome): `fas|star`, `far|heart`
+- `text` — The text content
+- `tag` — HTML tag to use: `h1`, `h2`, `h3`, `h4`, `h5`, `h6`, `p`, `div`
+- `icon` — Icon prefix: `far|stars`, `fas|check`
+- `css` — Impreza JSON URL-encoded CSS
 
-#### Text (`us_text`)
-```
-[us_text text="Your paragraph content here" size="1rem"]
-```
+**When to use `[us_text]`:**
+- Simple one-line text (badges, labels, short captions)
+- Text that needs an inline icon via the `icon` parameter
+- Name/role labels in testimonials or person cards
 
-#### Message Box (`us_message`)
-```
-[us_message 
-  color="primary"
-  icon="fas|info-circle"
-  closing="1"
-]
-  Important information for users.
-[/us_message]
-```
+**When NOT to use `[us_text]`:**
+- Headings (use `[vc_column_text]` with `<h1>`–`<h6>` tags instead)
+- Multi-line or mixed-format text
+- Text containing HTML
 
-**Message Types:**
-- `color` - `success` (green), `attention` (yellow), `error` (red), `info` (blue)
+#### Typography Decision Guide
 
-### Buttons & CTAs
+| Content Type | Element to Use | Example |
+|---|---|---|
+| Main heading (h1) | `[vc_column_text]` | `<h1>Page Title</h1>` |
+| Section heading (h2–h6) | `[vc_column_text]` | `<h2>Features</h2>` |
+| Heading + description | `[vc_column_text]` | `<h2>Title</h2>\nDescription text` |
+| Heading with gradient/effect | `[vc_column_text]` | `<h1>Text <span style="...">colored</span></h1>` |
+| Simple label/badge | `[us_text]` | `text="LABEL" icon="far|stars"` |
+| Person name | `[us_text]` | `text="John Doe"` with css for weight |
+| Short caption | `[us_text]` | `text="14 days free trial"` |
+| Card title + desc (inside column_inner) | `[vc_column_text]` | `<h5>Card Title</h5>\nCard description` |
 
-#### Button (`us_btn`)
+### Separator (`us_separator`)
+
+Used for spacing between elements.
+
 ```
-[us_btn 
-  text="Learn More"
-  link="url:https%3A%2F%2Fexample.com|title:Learn%20More|target:_blank"
-  style="raised"
-  color="primary"
-  size="medium"
-  icon="fas|arrow-right"
-  iconpos="right"
-]
+[us_separator size="small"]
+[us_separator size="large"]
+[us_separator size="custom" height="10px"]
+[us_separator size="custom" height="30px"]
 ```
 
-**Button Parameters:**
-- `text` - Button label
-- `link` - URL (encoded): `url:https%3A%2F%2Fexample.com|title:Title|target:_blank`
-- `style` - Style: `raised`, `flat`, `outlined`
-- `color` - Color: `primary`, `secondary`, `light`, `dark`, `custom`
-- `size` - Size: `small`, `medium`, `large`
-- `icon` - Icon: `fas|arrow-right`, `far|heart`
-- `iconpos` - Icon position: `left`, `right`
-- `align` - Alignment: `left`, `center`, `right`
+**Sizes:** `small`, `medium`, `large`, `huge`, `custom`
+When `size="custom"`, use `height` to specify exact pixel value.
 
-#### Call to Action (`us_cta`)
+### Buttons (`us_btn`)
+
+**Basic button:**
 ```
-[us_cta 
-  title="Ready to Get Started?"
-  message="Join thousands of satisfied customers today."
-  btn_label="Sign Up Now"
-  btn_link="url:https%3A%2F%2Fexample.com%2Fsignup"
-  btn_style="raised"
-  color_bg="primary"
-]
+[us_btn label="Inizia la prova gratuita" icon="fas|arrow-right" iconpos="right" style="2"]
 ```
 
-### Images & Media
-
-#### Single Image (`us_image`)
+**Secondary button:**
 ```
-[us_image 
-  image="12345"
-  size="full"
-  align="center"
-  lightbox="1"
-  has_ratio="1"
-  ratio="16x9"
-]
+[us_btn label="Guarda la demo"]
 ```
 
 **Parameters:**
-- `image` - Image ID or URL
-- `size` - WordPress size: `thumbnail`, `medium`, `large`, `full`
-- `align` - Alignment: `left`, `center`, `right`
-- `lightbox` - Enable lightbox: `1`, `0`
-- `ratio` - Aspect ratio: `1x1`, `4x3`, `16x9`, `21x9`, `2x3`, `3x2`
-- `has_ratio` - Force aspect ratio: `1`, `0`
+- `label` — Button text (**NOT** `text`)
+- `style` — Numeric style ID: `"1"`, `"2"`, `"3"`, etc. (defined in Theme Options > Buttons)
+- `icon` — Icon: `fas|arrow-right`, `far|heart`, `fas|play`
+- `iconpos` — Icon position: `left`, `right`
+- `link` — URL (encoded): `url:https%3A%2F%2Fexample.com|title:Title|target:_blank`
+- `align` — Alignment: `left`, `center`, `right`
 
-#### Gallery (`us_gallery`)
+**⚠️ Button style values:**
+- Do NOT use `"raised"`, `"flat"`, `"outlined"` — these do not work
+- Use numeric IDs that correspond to button styles configured in Theme Options
+
+**Multiple buttons side by side:**
 ```
-[us_gallery 
-  ids="123,456,789"
-  columns="3"
-  gap="20px"
-  type="masonry"
-  lightbox="1"
-]
+[us_hwrapper alignment="center" inner_items_gap="1rem" valign="middle"][us_btn label="Primary Action" icon="fas|arrow-right" iconpos="right" style="2"][us_btn label="Secondary Action"][/us_hwrapper]
 ```
 
-**Gallery Types:**
-- `type` - `default`, `masonry`, `carousel`, `slider`
+### Horizontal Wrapper (`us_hwrapper`)
 
-#### Image Slider (`us_image_slider`)
-```
-[us_image_slider 
-  ids="123,456,789"
-  arrows="1"
-  nav="dots"
-  autoplay="1"
-  autoplay_period="5"
-  fullscreen="1"
-  ratio="16x9"
-]
-```
+Container for placing elements side by side horizontally.
 
-#### Video (`vc_video`)
 ```
-[vc_video 
-  link="https://www.youtube.com/watch?v=xxxxx"
-  el_aspect="16-9"
-]
-```
-
-### Interactive Elements
-
-#### Accordion (`us_accordion`)
-```
-[us_accordion]
-  [us_accordion_item 
-    title="First Section"
-    active="1"
-  ]
-    Content of first section.
-  [/us_accordion_item]
-  [us_accordion_item title="Second Section"]
-    Content of second section.
-  [/us_accordion_item]
-[/us_accordion]
+[us_hwrapper alignment="center" inner_items_gap="1rem" valign="middle"]<!-- Inline elements -->[/us_hwrapper]
 ```
 
 **Parameters:**
-- `active` - Initially open: `1` (first item), `0` (none)
-- `title` - Section title
-- `icon` - Custom icon
+- `alignment` — Horizontal alignment: `left`, `center`, `right`
+- `inner_items_gap` — Gap between items: `0rem`, `0.5rem`, `1rem`, etc.
+- `valign` — Vertical alignment: `top`, `middle`, `bottom`
+- `wrap` — Allow wrapping: `"1"`, `"0"`
 
-#### Tabs (`us_tabs`)
-```
-[us_tabs 
-  layout="default"
-  align="center"
-]
-  [us_tab title="Tab 1" active="1"]
-    First tab content.
-  [/us_tab]
-  [us_tab title="Tab 2"]
-    Second tab content.
-  [/us_tab]
-[/us_tabs]
-```
+### Vertical Wrapper (`us_vwrapper`)
 
-**Tab Layouts:**
-- `layout` - `default`, `modern`, `trendy`, `timeline`
-
-#### Popup (`us_popup`)
-```
-[us_popup 
-  show_on="click"
-  trigger_id="open-popup-btn"
-]
-  Popup content goes here.
-[/us_popup]
-```
-
-**Popup Triggers:**
-- `show_on` - `load`, `click`, `selector`
-- `trigger_id` - Element ID to trigger popup
-
-### Counters & Progress
-
-#### Counter (`us_counter`)
-```
-[us_counter 
-  initial="0"
-  target="1500"
-  prefix="$"
-  suffix="+"
-  duration="2"
-  color="primary"
-  size="3rem"
-]
-```
-
-#### Progress Bar (`us_progbar`)
-```
-[us_progbar 
-  count="75"
-  title="WordPress Development"
-  style="thin"
-  color="primary"
-]
-```
-
-### Icons & Iconbox
-
-#### Single Icon (`us_icon`)
-```
-[us_icon 
-  icon="fas|rocket"
-  size="3rem"
-  color="primary"
-  link="url:https%3A%2F%2Fexample.com"
-]
-```
-
-#### Iconbox (`us_iconbox`)
-```
-[us_iconbox 
-  icon="fas|check-circle"
-  title="Feature Title"
-  style="default"
-  iconpos="top"
-  img="12345"
-]
-  Feature description text goes here.
-[/us_iconbox]
-```
-
-**Iconbox Styles:**
-- `style` - `default`, `circle`, `outlined`
-- `iconpos` - `top`, `left`
-- `color` - `primary`, `secondary`, `custom`
-
-### Social Links
+Container for stacking elements vertically with controlled gap.
 
 ```
-[us_socials 
-  items="%5B%7B%22type%22%3A%22facebook%22%2C%22url%22%3A%22https%3A%2F%2Ffacebook.com%2Fyourpage%22%7D%2C%7B%22type%22%3A%22twitter%22%2C%22url%22%3A%22https%3A%2F%2Ftwitter.com%2Fyouraccount%22%7D%5D"
-  style="colored"
-  size="1.5rem"
-]
+[us_vwrapper inner_items_gap="0rem"][us_text text="Name" css="..."][us_text text="Role" css="..."][/us_vwrapper]
 ```
 
-**Available Networks:**
-facebook, twitter, instagram, linkedin, youtube, pinterest, tiktok, discord, telegram, whatsapp, email
+**Parameters:**
+- `inner_items_gap` — Gap between items
 
-### Contact & Forms
+### Images (`us_image`)
 
-#### Contact Form (`us_cform`)
+Always use `[us_image]` — never raw `<img>` HTML.
+
+**Basic image:**
 ```
-[us_cform 
-  receiver_email="info@example.com"
-  fields="%5B%7B%22type%22%3A%22text%22%2C%22label%22%3A%22Name%22%2C%22required%22%3A%221%22%7D%2C%7B%22type%22%3A%22email%22%2C%22label%22%3A%22Email%22%2C%22required%22%3A%221%22%7D%2C%7B%22type%22%3A%22textarea%22%2C%22label%22%3A%22Message%22%2C%22required%22%3A%221%22%7D%5D"
-  button_text="Send Message"
-]
+[us_image image="1415" size="full" align="center"]
 ```
 
-**Field Types:**
-- `text` - Single-line text
-- `email` - Email validation
-- `textarea` - Multi-line text
-- `select` - Dropdown
-- `checkbox` - Checkbox
-- `radio` - Radio buttons
+**Image with ratio and border radius:**
+```
+[us_image ratio_width="21" ratio_height="9" has_ratio="1" ratio="16x9" align="center" size="full" css="%7B%22default%22%3A%7B%22border-radius%22%3A%2216px%22%7D%7D" image="1415"]
+```
+
+**Circle avatar (e.g., for testimonials):**
+```
+[us_image ratio_width="21" ratio_height="9" has_ratio="1" size="full" image="1415" style="circle" css="%7B%22default%22%3A%7B%22width%22%3A%2248px%22%2C%22height%22%3A%2248px%22%7D%7D"]
+```
+
+**Parameters:**
+- `image` — WordPress media library ID (numeric)
+- `size` — WordPress size: `thumbnail`, `medium`, `large`, `full`
+- `align` — Alignment: `left`, `center`, `right`
+- `style` — Style: `default`, `circle`
+- `has_ratio` — Force aspect ratio: `"1"`, `"0"`
+- `ratio` — Aspect ratio: `1x1`, `4x3`, `16x9`, `21x9`
+- `ratio_width`, `ratio_height` — Custom ratio values
+- `lightbox` — Enable lightbox: `"1"`, `"0"`
+- `css` — Impreza JSON URL-encoded CSS
+
+### Iconbox (`us_iconbox`)
+
+Used for icons with optional styling. Can be used as a standalone icon display or as an icon+title combo.
+
+**Icon only (e.g., in a feature card):**
+```
+[us_iconbox icon="far|bolt" iconpos="left" alignment="left" size="24px" el_class="icone" color="custom" icon_color="#ffffff"][/us_iconbox]
+```
+
+**Star rating icon:**
+```
+[us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox]
+```
+
+**Parameters:**
+- `icon` — Icon in Impreza format: `far|bolt`, `fas|check-circle`, `far|code`, `far|globe`, `far|mobile`, `far|shield-check`, `far|browser`, `far|stars`
+- `iconpos` — Icon position: `top`, `left`
+- `alignment` — Content alignment: `left`, `center`, `right`
+- `size` — Icon size: `18px`, `24px`, `32px`, etc.
+- `color` — Color mode: `primary`, `secondary`, `custom`
+- `icon_color` — Custom icon color (hex)
+- `el_class` — Custom CSS class
+- `title` — Optional title text
+
+**Star Rating Pattern (5 stars):**
+```
+[us_hwrapper inner_items_gap="0rem"][us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox][us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox][us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox][us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox][us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox][/us_hwrapper]
+```
+
+### Single Icon (`us_icon`)
+
+```
+[us_icon icon="fas|rocket" size="3rem" color="primary"]
+```
+
+### Message Box (`us_message`)
+
+```
+[us_message color="primary" icon="fas|info-circle" closing="1"]Important information.[/us_message]
+```
+
+**Message colors:** `success` (green), `attention` (yellow), `error` (red), `info` (blue)
+
+### Gallery (`us_gallery`)
+
+```
+[us_gallery ids="123,456,789" columns="3" gap="20px" type="masonry" lightbox="1"]
+```
+
+**Gallery types:** `default`, `masonry`, `carousel`, `slider`
+
+### Image Slider (`us_image_slider`)
+
+```
+[us_image_slider ids="123,456,789" arrows="1" nav="dots" autoplay="1" autoplay_period="5" ratio="16x9"]
+```
+
+### Video (`vc_video`)
+
+```
+[vc_video link="https://www.youtube.com/watch?v=xxxxx" el_aspect="16-9"]
+```
+
+### Accordion (`us_accordion`)
+
+```
+[us_accordion][us_accordion_item title="First Section" active="1"]Content of first section.[/us_accordion_item][us_accordion_item title="Second Section"]Content of second section.[/us_accordion_item][/us_accordion]
+```
+
+### Tabs (`us_tabs`)
+
+```
+[us_tabs layout="default" align="center"][us_tab title="Tab 1" active="1"]First tab content.[/us_tab][us_tab title="Tab 2"]Second tab content.[/us_tab][/us_tabs]
+```
+
+**Tab layouts:** `default`, `modern`, `trendy`, `timeline`
+
+### Popup (`us_popup`)
+
+```
+[us_popup show_on="click" trigger_id="open-popup-btn"]Popup content.[/us_popup]
+```
+
+### Counter (`us_counter`)
+
+```
+[us_counter initial="0" target="1500" prefix="$" suffix="+" duration="2" color="primary" size="3rem"]
+```
+
+### Progress Bar (`us_progbar`)
+
+```
+[us_progbar count="75" title="WordPress Development" style="thin" color="primary"]
+```
+
+### Social Links (`us_socials`)
+
+```
+[us_socials items="%5B%7B%22type%22%3A%22facebook%22%2C%22url%22%3A%22https%3A%2F%2Ffacebook.com%2Fyourpage%22%7D%5D" style="colored" size="1.5rem"]
+```
+
+### Contact Form (`us_cform`)
+
+```
+[us_cform receiver_email="info@example.com" button_text="Send Message"]
+```
 
 **Contact Form 7 Integration:**
 ```
 [contact-form-7 id="1234"]
 ```
 
-#### Google Maps (`us_gmaps`)
-```
-[us_gmaps 
-  address="1600 Amphitheatre Parkway, Mountain View, CA"
-  latitude="37.4220"
-  longitude="-122.0841"
-  zoom="15"
-  height="450px"
-  marker="1"
-]
-```
-
-### Testimonials
+### Google Maps (`us_gmaps`)
 
 ```
-[us_testimonial 
-  author="John Doe"
-  company="Acme Corp"
-  rating="5"
-  img="12345"
-]
-  "Amazing product! Highly recommend to anyone looking for quality service."
-[/us_testimonial]
+[us_gmaps address="1600 Amphitheatre Parkway, Mountain View, CA" latitude="37.4220" longitude="-122.0841" zoom="15" height="450px" marker="1"]
 ```
 
 ### Person Card (`us_person`)
+
 ```
-[us_person 
-  name="Jane Smith"
-  role="CEO & Founder"
-  image="12345"
-  email="jane@example.com"
-  phone="+1-555-0123"
-  socials="%5B%7B%22type%22%3A%22linkedin%22%2C%22url%22%3A%22https%3A%2F%2Flinkedin.com%2Fin%2Fjanesmith%22%7D%5D"
-]
-  Short bio about the person.
-[/us_person]
+[us_person name="Jane Smith" role="CEO & Founder" image="12345" email="jane@example.com"]Short bio.[/us_person]
 ```
 
-### Separators & Spacers
+### Call to Action (`us_cta`)
 
-#### Separator (`us_separator`)
 ```
-[us_separator 
-  type="default"
-  size="medium"
-  icon="fas|star"
-]
+[us_cta title="Ready to Start?" message="Join thousands today." btn_label="Sign Up" btn_link="url:https%3A%2F%2Fexample.com" btn_style="raised" color_bg="primary"]
 ```
 
-**Separator Types:**
-- `type` - `default`, `fullwidth`, `short`, `invisible`
-- `size` - `small`, `medium`, `large`, `huge`
+### Custom HTML (`us_html`)
 
-#### Vertical Wrapper (`us_hwrapper`)
-Horizontal container with vertical alignment control:
+**Only for genuinely custom HTML/JS that cannot be built with native elements:**
+
 ```
-[us_hwrapper 
-  valign="middle"
-  wrap="1"
-]
-  <!-- Inline elements with vertical centering -->
-[/us_hwrapper]
+[us_html]
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"LocalBusiness","name":"Your Business"}
+</script>
+[/us_html]
 ```
 
-#### Vertical Wrapper (`us_vwrapper`)
-Vertical stacking container:
+### Reusable Blocks (`us_page_block`)
+
 ```
-[us_vwrapper]
-  <!-- Stacked elements -->
-[/us_vwrapper]
+[us_page_block id="1234"]
 ```
 
 ---
@@ -538,246 +624,158 @@ Vertical stacking container:
 
 ### Post Grid (`us_grid`)
 
-Display posts, custom post types, or WooCommerce products in customizable grids.
-
-**Basic Post Grid:**
 ```
-[us_grid 
-  post_type="post"
-  items_qty="9"
-  columns="3"
-  items_gap="30px"
-  pagination="ajax"
-  filter="1"
-  filter_taxonomy="category"
-]
+[us_grid post_type="post" items_qty="9" columns="3" items_gap="30px" pagination="ajax" filter="1" filter_taxonomy="category"]
 ```
 
 **Parameters:**
-- `post_type` - `post`, `page`, `product`, `portfolio`, `us_testimonial`, or custom post type
-- `items_qty` - Number of items to show
-- `columns` - Grid columns: `1`, `2`, `3`, `4`, `5`, `6`
-- `items_gap` - Gap between items: `0px` to `60px`
-- `type` - Grid type: `grid`, `masonry`, `carousel`
-- `pagination` - Pagination: `regular`, `ajax`, `load_more`, `infinite`
-- `filter` - Enable filter: `1`, `0`
-- `filter_taxonomy` - Filter by: `category`, `post_tag`, `product_cat`, custom taxonomy
-- `orderby` - Order by: `date`, `title`, `rand`, `menu_order`, `modified`
-- `order` - Sort direction: `DESC`, `ASC`
+- `post_type` — `post`, `page`, `product`, `portfolio`, or custom post type
+- `items_qty` — Number of items
+- `columns` — Grid columns: `1`–`6`
+- `items_gap` — Gap: `0px` to `60px`
+- `type` — Grid type: `grid`, `masonry`, `carousel`
+- `pagination` — `regular`, `ajax`, `load_more`, `infinite`
+- `filter` — Enable filter: `"1"`, `"0"`
+- `filter_taxonomy` — `category`, `post_tag`, `product_cat`, custom taxonomy
+- `orderby` — `date`, `title`, `rand`, `menu_order`, `modified`
+- `order` — `DESC`, `ASC`
 
-**Grid with Custom Query:**
-```
-[us_grid 
-  post_type="post"
-  taxonomy_category="featured,news"
-  items_qty="6"
-  columns="3"
-  img_size="large"
-  title_size="1.5rem"
-  meta="date,author,comments"
-  excerpt_length="20"
-]
-```
+### WooCommerce Product Grid
 
-**WooCommerce Product Grid:**
 ```
-[us_grid 
-  post_type="product"
-  items_qty="12"
-  columns="4"
-  show_add_to_cart="1"
-  show_price="1"
-  filter="1"
-  filter_taxonomy="product_cat"
-  orderby="popularity"
-]
-```
-
-### Grid Layouts (Templates)
-
-Create reusable grid item templates at **Templates > Grid Layouts**.
-
-**Using Custom Layout:**
-```
-[us_grid 
-  post_type="post"
-  items_layout="12345"
-  items_qty="9"
-  columns="3"
-]
-```
-
-### Post List (`us_post_list`)
-
-Alternative to grid with different styling options:
-```
-[us_post_list 
-  query_args="post_type=post&posts_per_page=5&category_name=news"
-  show_thumbnails="1"
-  show_date="1"
-  show_author="1"
-]
-```
-
-### User List (`us_user_list`)
-
-Display team members or users:
-```
-[us_user_list 
-  role="author"
-  items_qty="8"
-  columns="4"
-  show_avatar="1"
-  show_bio="1"
-]
+[us_grid post_type="product" items_qty="12" columns="4" show_add_to_cart="1" show_price="1" filter="1" filter_taxonomy="product_cat" orderby="popularity"]
 ```
 
 ---
 
-## WooCommerce Integration
+## Design-to-Code Workflow
 
-### Product Elements
+### From Figma Design
 
-#### Single Product (`us_single_product`)
+#### Step 1: Analyze Layout Structure (What to Extract)
+- Number of sections/rows
+- Column layouts per row (how many columns, proportions)
+- Element types (heading, text, button, image, icon, card)
+- Spacing and alignment (padding, margins between sections)
+- Background colors for rows/columns
+- Special decorative effects (gradients on text, border-radius, shadows)
+
+#### Step 1b: What to IGNORE from Figma
+- **Font sizes** — theme handles h1–h6 and body text sizes
+- **Font weights** — theme handles heading/body weights
+- **Font families** — theme handles typography
+- **Line heights** — theme handles line heights
+- **Letter spacing** — theme handles letter spacing
+- **Button visual styles** — theme button presets handle this
+- **Animations/transitions** — note them, don't implement them
+- **Hover states** — note them, don't implement them
+
+#### Step 2: Map Figma Components to Impreza
+
+| Figma Element | Impreza Element |
+|---|---|
+| Frame/Section | `[vc_row]` (outer) or `[vc_row_inner]` (grid) |
+| Auto Layout horizontal | `[us_hwrapper]` |
+| Auto Layout vertical | `[us_vwrapper]` |
+| Heading text (h1–h6) | `[vc_column_text]` with `<h1>`–`<h6>` HTML tag |
+| Body text / paragraph | `[vc_column_text]` with paragraph text |
+| Short label / badge | `[us_text]` with css styling |
+| Button | `[us_btn label="..." style="2"]` |
+| Image | `[us_image image="ID"]` |
+| Icon | `[us_iconbox icon="far|name"]` |
+| Card (icon + title + text) | `[vc_column_inner]` containing `[us_iconbox]` + `[vc_column_text]` |
+| Star rating | `[us_hwrapper]` with multiple `[us_iconbox]` |
+| Avatar/photo circle | `[us_image style="circle" css="...width/height..."]` |
+| Testimonial card | `[vc_column_inner]` with stars + text + author info |
+| Grid of cards | `[vc_row_inner columns="3"]` with `[vc_column_inner]` children |
+| Space between elements | `[us_separator size="small/large/custom"]` |
+| Buttons side-by-side | `[us_hwrapper]` containing multiple `[us_btn]` |
+| Name + Role stacked | `[us_vwrapper]` with two `[us_text]` elements |
+
+#### Step 3: Build the Shortcode Structure
+
+Follow this hierarchy:
+1. **`[vc_row]`** — One per page section (hero, features, testimonials, CTA, etc.)
+2. **`[vc_column]`** — Inside each row (usually `width="1/1"` for full-width sections)
+3. **`[vc_row_inner columns="N"]`** — For grids/card layouts inside a section
+4. **`[vc_column_inner width="1/N"]`** — Individual cards/items within the grid
+5. **Content elements** — `[vc_column_text]`, `[us_text]`, `[us_btn]`, `[us_image]`, `[us_iconbox]`, `[us_separator]`, `[us_hwrapper]`, `[us_vwrapper]`
+
+#### Step 4: Apply Only Necessary Styling
+
+Use `css` param only for:
+- Background colors on rows/columns
+- Text alignment (center, right)
+- Border radius
+- Box shadows
+- Specific colors that differ from theme defaults
+- Width/height constraints (e.g., avatar size)
+- Custom margins for centering (margin-left: auto, margin-right: auto)
+
+**Do NOT use `css` param for:**
+- Font sizes of standard headings (h1–h6) — theme handles this
+- Font weights of standard headings — theme handles this
+- Font families — theme handles this
+- Line heights — theme handles this
+- Standard paragraph text styling — theme handles this
+
+#### Step 5: Generate Notes Section
+
+At the end of the generated code, include a `## Notes` section listing:
+- Any animations/effects found in the Figma that were not implemented
+- Image placeholders that need real WordPress media IDs
+- Any interactive behaviors that require additional configuration
+- Suggested custom CSS if decorative effects were detected
+
+### Complete Real-World Example
+
+**Input:** Figma design with hero section, features grid, testimonials, and CTA.
+
+**Output (Classic Mode ready):**
+
 ```
-[us_single_product 
-  product_id="123"
-  show_title="1"
-  show_price="1"
-  show_add_to_cart="1"
-  show_rating="1"
-]
-```
-
-#### Products Carousel
-```
-[us_grid 
-  post_type="product"
-  type="carousel"
-  items_qty="8"
-  columns="4"
-  arrows="1"
-  dots="1"
-  autoplay="1"
-]
-```
-
-#### Add to Cart Button
-```
-[us_add_to_cart 
-  product_id="123"
-  style="raised"
-  color="primary"
-]
-```
-
-### WooCommerce Pages
-
-Impreza allows custom WooCommerce page templates via **Grid Layouts**:
-
-- **Product Page**: Customize with Page Template Builder
-- **Cart Page**: Custom layout via Templates
-- **Checkout Page**: Custom design options
-- **My Account**: Full customization support
-- **Thank You Page**: Custom success page
-
----
-
-## Advanced Features
-
-### Reusable Blocks (`us_page_block`)
-
-Create reusable content blocks at **Templates > Reusable Blocks**.
-
-**Usage:**
-```
-[us_page_block id="1234"]
-```
-
-**Exclude Rows/Columns:**
-```
-[us_page_block 
-  id="1234"
-  exclude_rows_columns="inside"
-]
-```
-
-Options:
-- `none` - Keep all structure
-- `inside` - Remove rows/columns inside block
-- `around` - Remove rows/columns around block
-
-**Use in Menus:**
-Add reusable blocks as menu items for mega menus or custom navigation.
-
-### Custom HTML & Code
-
-#### Custom HTML Element
-```
-[us_html]
-<div class="custom-component">
-  <!-- Your custom HTML -->
-</div>
-[/us_html]
-```
-
-#### JavaScript Execution
-```
-[us_html]
-<script>
-// Your JavaScript code
-jQuery(document).ready(function($) {
-  // Initialize custom functionality
-});
-</script>
-[/us_html]
-```
-
-### ACF (Advanced Custom Fields) Integration
-
-Impreza natively supports ACF custom fields in:
-- Grid Layouts
-- Dynamic Values
-- Page Templates
-
-**Display ACF Field:**
-```
-[us_text 
-  text="{{post:acf_field_name}}"
-]
+[vc_row width="custom" width_custom="840px"][vc_column][us_text text="Potenziato dall'Intelligenza Artificiale" css="%7B%22default%22%3A%7B%22color%22%3A%22%231447E6%22%2C%22text-align%22%3A%22center%22%2C%22font-size%22%3A%2214px%22%2C%22line-height%22%3A%222%22%2C%22font-weight%22%3A%22400%22%2C%22background-color%22%3A%22%23DBEAFE%22%2C%22width%22%3A%22fit-content%22%2C%22margin-left%22%3A%22auto%22%2C%22margin-right%22%3A%22auto%22%2C%22padding-left%22%3A%221rem%22%2C%22padding-right%22%3A%221rem%22%2C%22border-radius%22%3A%2220px%22%7D%7D" icon="far|stars"][us_separator size="small"][vc_column_text css="%7B%22default%22%3A%7B%22text-align%22%3A%22center%22%7D%7D"]
+<h1>Da Figma a WordPress <span style="background: linear-gradient(90deg,#155DFC 0%,#4F39F6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">in un solo click</span></h1>
+[/vc_column_text][us_separator size="small"][vc_column_text css="%7B%22default%22%3A%7B%22text-align%22%3A%22center%22%7D%7D"]Smetti di perdere tempo con il coding manuale. La nostra AI converte i tuoi design Figma in siti WordPress pixel-perfect, veloci e ottimizzati per la SEO.[/vc_column_text][us_separator size="small"][us_hwrapper alignment="center" inner_items_gap="1rem" valign="middle"][us_btn label="Inizia la prova gratuita" icon="fas|arrow-right" iconpos="right" style="2"][us_btn label="Guarda la demo"][/us_hwrapper][/vc_column][/vc_row][vc_row][vc_column][us_image ratio_width="21" ratio_height="9" has_ratio="1" ratio="16x9" align="center" size="full" css="%7B%22default%22%3A%7B%22border-radius%22%3A%2216px%22%7D%7D" image="IMAGE_ID"][/vc_column][/vc_row][vc_row][vc_column][us_text css="%7B%22default%22%3A%7B%22color%22%3A%22%231447E6%22%2C%22text-align%22%3A%22center%22%2C%22font-size%22%3A%2216px%22%2C%22font-weight%22%3A%22400%22%2C%22text-transform%22%3A%22uppercase%22%7D%7D" text="Caratteristiche"][vc_column_text css="%7B%22default%22%3A%7B%22text-align%22%3A%22center%22%7D%7D"]
+<h2>Tutto ciò che serve per scalare</h2>
+La nostra tecnologia AI comprende il design meglio di qualsiasi altro strumento sul mercato.[/vc_column_text][us_separator size="large"][vc_row_inner columns="3" tablets_columns="2"][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"][us_iconbox icon="far|bolt" iconpos="left" alignment="left" size="24px" el_class="icone" color="custom" icon_color="#ffffff"][/us_iconbox][vc_column_text]
+<h5>Velocità Fulminea</h5>
+Converti design complessi in secondi, non giorni. Risparmia fino al 90% del tempo di sviluppo.[/vc_column_text][/vc_column_inner][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"][us_iconbox icon="far|code" iconpos="left" alignment="left" size="24px" el_class="icone" color="custom" icon_color="#ffffff"][/us_iconbox][vc_column_text]
+<h5>Codice Pulito</h5>
+Codice React e PHP generato semanticamente corretto, facile da mantenere ed estendere.[/vc_column_text][/vc_column_inner][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"][us_iconbox icon="far|browser" iconpos="left" alignment="left" size="24px" el_class="icone" color="custom" icon_color="#ffffff"][/us_iconbox][vc_column_text]
+<h5>Pixel Perfect</h5>
+Ogni margine, colore e font viene rispettato con precisione millimetrica.[/vc_column_text][/vc_column_inner][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"][us_iconbox icon="far|globe" iconpos="left" alignment="left" size="24px" el_class="icone" color="custom" icon_color="#ffffff"][/us_iconbox][vc_column_text]
+<h5>SEO Ottimizzato</h5>
+Struttura HTML ottimizzata per i motori di ricerca, con meta tag e performance elevate.[/vc_column_text][/vc_column_inner][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"][us_iconbox icon="far|mobile" iconpos="left" alignment="left" size="24px" el_class="icone" color="custom" icon_color="#ffffff"][/us_iconbox][vc_column_text]
+<h5>Totalmente Responsivo</h5>
+I layout si adattano automaticamente a desktop, tablet e mobile senza configurazioni extra.[/vc_column_text][/vc_column_inner][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%2C%22border-radius%22%3A%2216px%22%7D%7D"][us_iconbox icon="far|shield-check" iconpos="left" alignment="left" size="24px" el_class="icone" color="custom" icon_color="#ffffff"][/us_iconbox][vc_column_text]
+<h5>Sicurezza Integrata</h5>
+Best practices di sicurezza WordPress implementate di default in ogni conversione.[/vc_column_text][/vc_column_inner][/vc_row_inner][/vc_column][/vc_row]
 ```
 
-**ACF Repeater in Grid:**
-Use Grid Layout Builder to display ACF repeater fields in custom layouts.
+### Testimonial Section Example
 
-### Display Logic
-
-Show/hide elements based on conditions:
-
-**Logged-in Users Only:**
 ```
-[us_iconbox 
-  title="Member Dashboard"
-  show_if="{{user:logged_in}}"
-]
-  Exclusive content for members.
-[/us_iconbox]
+[vc_row css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%7D%7D"][vc_column][us_text text="Scelto da migliaia di designer" tag="h3" css="%7B%22default%22%3A%7B%22text-align%22%3A%22center%22%7D%7D"][us_separator][vc_row_inner columns="3"][vc_column_inner width="1/3" css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23ffffff%22%2C%22border-radius%22%3A%2216px%22%2C%22box-shadow-h-offset%22%3A%220%22%2C%22box-shadow-v-offset%22%3A%221px%22%2C%22box-shadow-blur%22%3A%223px%22%2C%22box-shadow-spread%22%3A%220%22%2C%22box-shadow-color%22%3A%22%23000000%22%7D%7D"][us_hwrapper inner_items_gap="0rem"][us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox][us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox][us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox][us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox][us_iconbox size="18px" color="custom" icon_color="#FDC700"][/us_iconbox][/us_hwrapper][us_separator size="custom" height="10px"][vc_column_text css="%7B%22default%22%3A%7B%22color%22%3A%22%234A5565%22%2C%22font-size%22%3A%2216px%22%2C%22font-style%22%3A%22italic%22%7D%7D"]"Quote text goes here."[/vc_column_text][us_separator size="custom" height="30px"][us_hwrapper valign="middle"][us_image ratio_width="21" ratio_height="9" has_ratio="1" size="full" image="IMAGE_ID" style="circle" css="%7B%22default%22%3A%7B%22width%22%3A%2248px%22%2C%22height%22%3A%2248px%22%7D%7D"][us_vwrapper inner_items_gap="0rem"][us_text text="Author Name" css="%7B%22default%22%3A%7B%22font-size%22%3A%2216px%22%2C%22font-weight%22%3A%22700%22%7D%7D"][us_text text="Author Role" css="%7B%22default%22%3A%7B%22color%22%3A%22%236A7282%22%2C%22font-size%22%3A%2214px%22%7D%7D"][/us_vwrapper][/us_hwrapper][/vc_column_inner][/vc_row_inner][/vc_column][/vc_row]
 ```
 
-**Device-Specific:**
+### CTA Section Example
+
 ```
-[us_image 
-  image="12345"
-  hide_on_mobile="yes"
-]
+[vc_row width="custom" width_custom="896px"][vc_column css="%7B%22default%22%3A%7B%22color%22%3A%22%23ffffff%22%2C%22text-align%22%3A%22center%22%2C%22background-color%22%3A%22%23155DFC%22%2C%22border-radius%22%3A%2220px%22%7D%7D"][us_text text="Pronto a trasformare il tuo workflow?" tag="h3"][us_separator size="small"][vc_column_text css="%7B%22default%22%3A%7B%22width%22%3A%22643px%22%2C%22margin-left%22%3A%22auto%22%2C%22margin-right%22%3A%22auto%22%7D%7D"]Unisciti a oltre 10.000 designer e sviluppatori che stanno già costruendo il web del futuro, oggi.[/vc_column_text][us_separator size="small"][us_hwrapper alignment="center" inner_items_gap="1rem" valign="middle"][us_btn label="Inizia Gratuitamente" iconpos="right" style="2"][us_btn label="Contatta il team"][/us_hwrapper][us_separator size="small"][vc_column_text css="%7B%22default%22%3A%7B%22color%22%3A%22%23BEDBFF%22%2C%22font-size%22%3A%2214px%22%7D%7D"]Nessuna carta di credito richiesta. 14 giorni di prova gratuita.[/vc_column_text][/vc_column][/vc_row]
 ```
 
-**Conditional Display:**
-- User logged in/out
-- Page types (archive, single, front page)
-- Date ranges
-- User roles
-- Custom conditions
+### From Written Description
+
+#### Example Input:
+"Create a hero section with a large heading, subheading, two CTAs side by side, and a background image"
+
+#### Output:
+```
+[vc_row css="%7B%22default%22%3A%7B%22background-color%22%3A%22%23000000%22%7D%7D" height="large" valign="middle"][vc_column css="%7B%22default%22%3A%7B%22text-align%22%3A%22center%22%7D%7D"][vc_column_text css="%7B%22default%22%3A%7B%22color%22%3A%22%23ffffff%22%2C%22text-align%22%3A%22center%22%7D%7D"]
+<h1>Transform Your Business Today</h1>
+[/vc_column_text][us_separator size="small"][vc_column_text css="%7B%22default%22%3A%7B%22color%22%3A%22%23ffffff%22%2C%22text-align%22%3A%22center%22%7D%7D"]Join thousands of companies already succeeding with our platform.[/vc_column_text][us_separator size="small"][us_hwrapper alignment="center" inner_items_gap="1rem" valign="middle" wrap="1"][us_btn label="Get Started Free" style="2" icon="fas|arrow-right" iconpos="right"][us_btn label="Watch Demo"][/us_hwrapper][/vc_column][/vc_row]
+```
 
 ---
 
@@ -787,76 +785,27 @@ Show/hide elements based on conditions:
 
 Impreza uses these breakpoints:
 - **Desktop**: 1280px+
-- **Laptop**: 1024px - 1279px
-- **Tablet**: 768px - 1023px
+- **Laptop**: 1024px – 1279px
+- **Tablet**: 768px – 1023px
 - **Mobile**: < 768px
 
 ### Responsive Strategies
 
-#### 1. Column Width Adjustments
+#### 1. Grid Column Adjustments
+Use `vc_row_inner` with `columns` and `tablets_columns`:
 ```
-[vc_row]
-  [vc_column width="1/3" width_md="1/2" width_sm="1/1"]
-    <!-- Desktop: 33%, Tablet: 50%, Mobile: 100% -->
-  [/vc_column]
-  [vc_column width="1/3" width_md="1/2" width_sm="1/1"]
-    <!-- Responsive columns -->
-  [/vc_column]
-  [vc_column width="1/3" width_md="1/2" width_sm="1/1"]
-    <!-- Auto-stack on mobile -->
-  [/vc_column]
-[/vc_row]
+[vc_row_inner columns="3" tablets_columns="2"]
 ```
 
-#### 2. Device-Specific Padding/Margin
+#### 2. Hide on Devices
 ```
-[us_hwrapper 
-  padding="60px"
-  padding_tablets="40px"
-  padding_mobiles="20px"
-]
-  <!-- Content with responsive spacing -->
-[/us_hwrapper]
+[us_image image="12345" hide_on_tablet="yes" hide_on_mobile="yes"]
+[us_btn label="Call Now" hide_on_desktop="yes" hide_on_laptop="yes"]
 ```
 
-#### 3. Hide on Devices
+#### 3. Image Aspect Ratios
 ```
-<!-- Desktop-only image -->
-[us_image 
-  image="12345"
-  hide_on_tablet="yes"
-  hide_on_mobile="yes"
-]
-
-<!-- Mobile-only CTA -->
-[us_btn 
-  text="Call Now"
-  hide_on_desktop="yes"
-  hide_on_laptop="yes"
-]
-```
-
-#### 4. Responsive Typography
-```
-[us_heading 
-  title="Responsive Heading"
-  size="clamp(1.5rem, 4vw, 3rem)"
-]
-```
-
-Use CSS clamp() for fluid typography:
-- `clamp(min, preferred, max)`
-- Example: `clamp(1.5rem, 4vw, 3rem)` scales between 1.5rem and 3rem
-
-#### 5. Image Aspect Ratios
-```
-[us_image 
-  image="12345"
-  has_ratio="1"
-  ratio="16x9"
-  ratio_tablets="4x3"
-  ratio_mobiles="1x1"
-]
+[us_image image="12345" has_ratio="1" ratio="16x9"]
 ```
 
 ---
@@ -875,8 +824,6 @@ Theme Options > Advanced Settings > Website Performance
 ☑ Disable extra features of WPBakery Page Builder
 ```
 
-This prevents WPBakery from loading heavy CSS/JS on frontend, improving load times significantly.
-
 #### 2. Assets Optimization
 ```
 Theme Options > Advanced Settings > Website Performance
@@ -893,563 +840,20 @@ Theme Options > Advanced Settings > Icon Sets
 ☑ Load only used icons (automatic detection)
 ```
 
-#### 4. Google Fonts
-Avoid loading unused fonts:
-```
-Theme Options > Typography
-- Set "Regular Text" to Arial (web-safe)
-- Set headings to system fonts or minimal Google Fonts
-- Or upload custom WOFF2 fonts locally
-```
-
-### Code-Level Optimization
-
-#### Use Inline Critical CSS
-```
-<!-- In theme functions.php or child theme -->
-<?php
-add_action('wp_head', 'custom_critical_css', 1);
-function custom_critical_css() {
-    echo '<style>
-        /* Critical above-the-fold CSS */
-        .header { /* styles */ }
-        .hero { /* styles */ }
-    </style>';
-}
-?>
-```
-
-#### Defer Non-Critical CSS
-```
-<!-- Use Custom Code area in Impreza -->
-<link rel="preload" href="styles.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-```
-
-#### Lazy Load Background Images
-```
-[vc_row 
-  bg_image=""
-  el_class="lazy-bg"
-  css=".lazy-bg{background-image:none;}"
-]
-```
-
-Then use JavaScript to load on scroll.
-
 ### Image Optimization
 
 - **Use WebP format** (with JPG fallback)
 - **Compress before upload** (TinyPNG, Squoosh)
-- **Use appropriate sizes**:
-  - Full-width hero: 1920px width
-  - Grid items: 800px width
-  - Thumbnails: 400px width
+- **Use appropriate sizes**: Full-width hero: 1920px, Grid items: 800px, Thumbnails: 400px
 - **Enable lazy loading**: Impreza has built-in lazy load
 - **Use CDN**: Cloudflare, CloudFront, or similar
 
 ### Caching Strategy
 
 **Recommended Plugins:**
-1. **WP Rocket** (premium) - most comprehensive
-2. **Hummingbird** - WPMU DEV (works great with Impreza)
-3. **WP Super Cache** - free alternative
-
-**Settings:**
-- Page caching: ✅ Enable
-- Object caching: ✅ Enable
-- Database optimization: ✅ Enable
-- GZIP compression: ✅ Enable
-- Browser caching: ✅ Enable
-- Minification: ✅ Enable (HTML, CSS, JS)
-- Lazy loading: ✅ Enable
-
----
-
-## Design-to-Code Workflow
-
-### From Visual Design
-
-#### Step 1: Analyze Layout Structure
-Identify:
-- Number of sections/rows
-- Column layouts per row
-- Element types (heading, text, button, image, etc.)
-- Spacing and alignment
-- Color scheme
-- Typography (sizes, weights)
-
-#### Step 2: Create Row Structure
-```
-[vc_row gap="30px" height="medium"]
-  [vc_column width="1/2"]
-    <!-- Left content -->
-  [/vc_column]
-  [vc_column width="1/2"]
-    <!-- Right content -->
-  [/vc_column]
-[/vc_row]
-```
-
-#### Step 3: Add Content Elements
-Map design elements to Impreza shortcodes:
-- Headlines → `[us_heading]`
-- Paragraphs → `[us_text]`
-- Buttons → `[us_btn]`
-- Images → `[us_image]`
-- Icons → `[us_icon]` or `[us_iconbox]`
-
-#### Step 4: Apply Styling
-Use Design settings for:
-- Colors: `color="primary"` or hex values
-- Spacing: `padding="40px"`, `margin="20px"`
-- Backgrounds: `bg_color="#f5f5f5"`
-- Custom classes: `el_class="custom-section"`
-
-#### Step 5: Make Responsive
-Add device-specific parameters:
-- Column widths: `width_md="1/2"`, `width_sm="1/1"`
-- Spacing: `padding_tablets="30px"`, `padding_mobiles="20px"`
-- Visibility: `hide_on_mobile="yes"`
-
-### From Figma Design
-
-#### Step 1: Export Design Specs
-- Extract colors (hex values)
-- Note font sizes and weights
-- Measure spacing (padding, margins)
-- Identify breakpoints
-- Export images in optimal sizes
-
-#### Step 2: Map Figma Components to Impreza
-| Figma Element | Impreza Shortcode |
-|---------------|-------------------|
-| Frame/Section | `[vc_row]` |
-| Auto Layout | `[vc_column]` with grid |
-| Text heading | `[us_heading]` |
-| Text body | `[us_text]` |
-| Button | `[us_btn]` |
-| Image | `[us_image]` |
-| Icon | `[us_icon]` |
-| Card | `[us_iconbox]` or custom with `[us_hwrapper]` |
-
-#### Step 3: Implement Design System
-Create reusable components:
-- Define color palette in Theme Options
-- Set up typography styles
-- Create button presets
-- Build section templates
-
-#### Step 4: Build Shortcode
-```
-[vc_row 
-  bg_color="#FFFFFF"
-  padding="80px 0"
-  padding_tablets="60px 0"
-  padding_mobiles="40px 0"
-]
-  [vc_column width="1/1"]
-    [us_heading 
-      tag="h2"
-      title="Features That Matter"
-      size="2.5rem"
-      size_tablets="2rem"
-      size_mobiles="1.75rem"
-      align="center"
-      color="#1A1A1A"
-      font_weight="700"
-    ]
-    [us_text 
-      text="Discover powerful tools designed for success"
-      size="1.125rem"
-      align="center"
-      color="#666666"
-    ]
-  [/vc_column]
-[/vc_row]
-
-[vc_row 
-  gap="30px"
-  padding="0 0 80px 0"
-]
-  [vc_column width="1/3" width_md="1/2" width_sm="1/1"]
-    [us_iconbox 
-      icon="fas|zap"
-      title="Lightning Fast"
-      style="circle"
-      iconpos="top"
-      color="primary"
-    ]
-      Optimized for speed and performance from day one.
-    [/us_iconbox]
-  [/vc_column]
-  <!-- Repeat for other features -->
-[/vc_row]
-```
-
-### From Written Description
-
-#### Example Input:
-"Create a hero section with a large heading, subheading, two CTAs side by side, and a background image with overlay"
-
-#### Output Code:
-```
-[vc_row 
-  height="large"
-  valign="middle"
-  bg_image="https://example.com/hero-bg.jpg"
-  bg_size="cover"
-  bg_attachment="fixed"
-  color_scheme="dark"
-  parallax="vertical"
-  parallax_speed="0.3"
-]
-  [vc_column width="1/1" align="center"]
-    [us_heading 
-      tag="h1"
-      title="Transform Your Business Today"
-      size="3.5rem"
-      size_tablets="2.5rem"
-      size_mobiles="2rem"
-      color="#FFFFFF"
-      font_weight="700"
-    ]
-    [us_text 
-      text="Join thousands of companies already succeeding with our platform"
-      size="1.25rem"
-      color="#FFFFFF"
-      margin="0 0 30px 0"
-    ]
-    [us_hwrapper 
-      valign="middle"
-      wrap="1"
-    ]
-      [us_btn 
-        text="Get Started Free"
-        style="raised"
-        color="primary"
-        size="large"
-        el_class="hero-btn"
-      ]
-      [us_btn 
-        text="Watch Demo"
-        style="outlined"
-        color="light"
-        size="large"
-        icon="fas|play"
-        el_class="hero-btn"
-        margin="0 0 0 20px"
-      ]
-    [/us_hwrapper]
-  [/vc_column]
-[/vc_row]
-```
-
----
-
-## Common Patterns & Templates
-
-### Hero Section (Full Height with CTA)
-```
-[vc_row 
-  height="full"
-  valign="middle"
-  bg_image="URL_HERE"
-  bg_size="cover"
-  color_scheme="dark"
-]
-  [vc_column width="1/1" align="center"]
-    [us_heading 
-      tag="h1"
-      title="Your Main Headline"
-      size="clamp(2rem, 5vw, 4rem)"
-      color="#FFFFFF"
-    ]
-    [us_text 
-      text="Compelling subheadline goes here"
-      size="1.25rem"
-      color="#FFFFFF"
-    ]
-    [us_btn 
-      text="Call to Action"
-      style="raised"
-      color="primary"
-      size="large"
-    ]
-  [/vc_column]
-[/vc_row]
-```
-
-### Feature Grid (3 Columns)
-```
-[vc_row gap="30px"]
-  [vc_column width="1/3" width_md="1/2" width_sm="1/1"]
-    [us_iconbox 
-      icon="fas|rocket"
-      title="Fast Performance"
-      iconpos="top"
-    ]
-      Lightning-fast load times guaranteed.
-    [/us_iconbox]
-  [/vc_column]
-  [vc_column width="1/3" width_md="1/2" width_sm="1/1"]
-    [us_iconbox 
-      icon="fas|shield-alt"
-      title="Secure Platform"
-      iconpos="top"
-    ]
-      Enterprise-grade security measures.
-    [/us_iconbox]
-  [/vc_column]
-  [vc_column width="1/3" width_md="1/2" width_sm="1/1"]
-    [us_iconbox 
-      icon="fas|headset"
-      title="24/7 Support"
-      iconpos="top"
-    ]
-      Always here when you need us.
-    [/us_iconbox]
-  [/vc_column]
-[/vc_row]
-```
-
-### Testimonial Section
-```
-[vc_row 
-  bg_color="#F8F9FA"
-  padding="80px 0"
-]
-  [vc_column width="1/1"]
-    [us_heading 
-      title="What Our Clients Say"
-      align="center"
-      size="2.5rem"
-    ]
-  [/vc_column]
-[/vc_row]
-[vc_row 
-  gap="30px"
-  bg_color="#F8F9FA"
-  padding="0 0 80px 0"
-]
-  [vc_column width="1/3" width_md="1/1"]
-    [us_testimonial 
-      author="John Doe"
-      company="Acme Corp"
-      rating="5"
-    ]
-      "Excellent service and outstanding results!"
-    [/us_testimonial]
-  [/vc_column]
-  <!-- Repeat for more testimonials -->
-[/vc_row]
-```
-
-### Pricing Table (3 Tiers)
-```
-[vc_row gap="30px"]
-  [vc_column width="1/3" width_md="1/1"]
-    [us_pricing_table 
-      title="Starter"
-      price="$29"
-      period="/month"
-      features="10 Users|50GB Storage|Email Support"
-      button_text="Get Started"
-      button_link="url:signup"
-    ]
-  [/vc_column]
-  [vc_column width="1/3" width_md="1/1"]
-    [us_pricing_table 
-      title="Professional"
-      price="$79"
-      period="/month"
-      featured="1"
-      features="50 Users|500GB Storage|Priority Support|Advanced Analytics"
-      button_text="Start Free Trial"
-      button_link="url:trial"
-    ]
-  [/vc_column]
-  [vc_column width="1/3" width_md="1/1"]
-    [us_pricing_table 
-      title="Enterprise"
-      price="$199"
-      period="/month"
-      features="Unlimited Users|Unlimited Storage|24/7 Support|Custom Integration"
-      button_text="Contact Sales"
-      button_link="url:contact"
-    ]
-  [/vc_column]
-[/vc_row]
-```
-
-### Image + Text Split (50/50)
-```
-[vc_row gap="60px" valign="middle"]
-  [vc_column width="1/2" width_md="1/1"]
-    [us_image 
-      image="IMAGE_ID"
-      size="full"
-      ratio="16x9"
-      has_ratio="1"
-    ]
-  [/vc_column]
-  [vc_column width="1/2" width_md="1/1"]
-    [us_heading 
-      tag="h2"
-      title="Why Choose Us"
-      size="2.5rem"
-    ]
-    [us_text 
-      text="We provide innovative solutions that drive real results for your business."
-    ]
-    [us_btn 
-      text="Learn More"
-      style="raised"
-      color="primary"
-    ]
-  [/vc_column]
-[/vc_row]
-```
-
-### Blog Post Grid
-```
-[us_grid 
-  post_type="post"
-  items_qty="9"
-  columns="3"
-  columns_tablets="2"
-  columns_mobiles="1"
-  items_gap="30px"
-  img_size="large"
-  title_size="1.5rem"
-  excerpt_length="20"
-  meta="date,author,comments"
-  pagination="load_more"
-  filter="1"
-  filter_taxonomy="category"
-]
-```
-
-### Contact Section with Form
-```
-[vc_row 
-  gap="60px"
-  padding="80px 0"
-]
-  [vc_column width="1/2" width_md="1/1"]
-    [us_heading 
-      title="Get in Touch"
-      size="2.5rem"
-    ]
-    [us_text 
-      text="Have questions? We'd love to hear from you."
-    ]
-    [us_iconbox 
-      icon="fas|phone"
-      title="+1 (555) 123-4567"
-      iconpos="left"
-    ]
-    [/us_iconbox]
-    [us_iconbox 
-      icon="fas|envelope"
-      title="info@example.com"
-      iconpos="left"
-    ]
-    [/us_iconbox]
-  [/vc_column]
-  [vc_column width="1/2" width_md="1/1"]
-    [us_cform 
-      receiver_email="info@example.com"
-      button_text="Send Message"
-    ]
-  [/vc_column]
-[/vc_row]
-```
-
----
-
-## Troubleshooting
-
-### Common Issues & Solutions
-
-#### Issue: Shortcodes Visible on Frontend
-**Cause**: Content not processed by WordPress
-**Solution**:
-```php
-// Process shortcodes in custom areas
-echo do_shortcode('[your_shortcode]');
-```
-
-#### Issue: Columns Not Responsive
-**Cause**: Missing width parameters for devices
-**Solution**: Always add device-specific widths:
-```
-[vc_column width="1/3" width_md="1/2" width_sm="1/1"]
-```
-
-#### Issue: Background Image Not Showing
-**Cause**: Incorrect image URL or missing row height
-**Solution**:
-```
-[vc_row 
-  bg_image="https://full-url-here.jpg"
-  bg_size="cover"
-  height="medium"  <!-- Add explicit height -->
-]
-```
-
-#### Issue: Parallax Not Working
-**Cause**: Conflicting CSS or JavaScript
-**Solution**:
-1. Clear all caches
-2. Disable conflicting plugins
-3. Check `bg_attachment="scroll"` is not set
-```
-[vc_row 
-  parallax="vertical"
-  parallax_speed="0.5"
-  bg_attachment=""  <!-- Leave empty for parallax -->
-]
-```
-
-#### Issue: Icons Not Displaying
-**Cause**: Icon library not loaded
-**Solution**:
-Check **Theme Options > Advanced Settings > Icon Sets**
-```
-☑ Font Awesome 5 Pro (included with Impreza)
-```
-
-#### Issue: Custom CSS Not Applying
-**Cause**: Specificity issues or caching
-**Solution**:
-```css
-/* Use !important sparingly */
-.custom-class {
-    color: #FF0000 !important;
-}
-
-/* Or increase specificity */
-.vc_row .custom-class {
-    color: #FF0000;
-}
-```
-
-#### Issue: Form Submissions Not Sending
-**Cause**: Email configuration
-**Solution**:
-1. Install WP Mail SMTP plugin
-2. Configure SMTP settings
-3. Test email delivery
-4. Check spam folders
-
-#### Issue: Slow Page Load
-**Cause**: Unoptimized assets
-**Solution**:
-1. Enable **Disable extra features of WPBakery**
-2. Use caching plugin (WP Rocket, Hummingbird)
-3. Optimize images (WebP, compression)
-4. Enable lazy loading
-5. Minimize plugins
+1. **WP Rocket** (premium) — most comprehensive
+2. **Hummingbird** — WPMU DEV
+3. **WP Super Cache** — free alternative
 
 ---
 
@@ -1457,24 +861,14 @@ Check **Theme Options > Advanced Settings > Icon Sets**
 
 ### Adding Custom Styles
 
-#### Global Custom CSS
 Navigate to **Impreza > Theme Options > Custom CSS**:
+
 ```css
 /* Custom button hover effect */
 .us-btn-container .us-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 20px rgba(0,0,0,0.1);
     transition: all 0.3s ease;
-}
-
-/* Custom heading underline */
-.us-heading .us-heading-title::after {
-    content: '';
-    display: block;
-    width: 60px;
-    height: 3px;
-    background: var(--color-primary);
-    margin: 20px auto 0;
 }
 
 /* Responsive utilities */
@@ -1485,162 +879,30 @@ Navigate to **Impreza > Theme Options > Custom CSS**:
 }
 ```
 
-#### Element-Specific CSS
+### Element-Specific CSS
+
 Use `el_class` parameter:
 ```
-[us_heading 
-  title="Custom Styled Heading"
-  el_class="custom-heading-style"
-]
+[us_iconbox icon="far|bolt" el_class="icone"][/us_iconbox]
 ```
 
 Then in Custom CSS:
 ```css
-.custom-heading-style {
-    background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+.icone .w-iconbox-icon {
+    background: linear-gradient(135deg, #155DFC 0%, #4F39F6 100%);
+    border-radius: 8px;
+    padding: 8px;
 }
 ```
 
-### CSS Variables (Custom Properties)
+### CSS Variables
 
 Impreza uses CSS variables for theming:
 ```css
 :root {
     --color-primary: #1E88E5;
     --color-secondary: #FF6F00;
-    --font-heading: 'Poppins', sans-serif;
-    --font-body: 'Open Sans', sans-serif;
-    --base-padding: 20px;
 }
-
-/* Use in elements */
-.custom-section {
-    padding: calc(var(--base-padding) * 2);
-    color: var(--color-primary);
-    font-family: var(--font-heading);
-}
-```
-
-### Animation Classes
-```css
-/* Fade in on scroll */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.fade-in-up {
-    animation: fadeInUp 0.6s ease-out;
-}
-
-/* Pulse effect */
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-}
-
-.pulse-effect {
-    animation: pulse 2s infinite;
-}
-```
-
----
-
-## JavaScript Integration
-
-### Custom JavaScript
-
-Add to **Impreza > Theme Options > Custom Code > Before </body>**:
-
-```javascript
-<script>
-jQuery(document).ready(function($) {
-    
-    // Smooth scroll to anchor
-    $('a[href^="#"]').on('click', function(e) {
-        e.preventDefault();
-        var target = $(this.getAttribute('href'));
-        if(target.length) {
-            $('html, body').stop().animate({
-                scrollTop: target.offset().top - 100
-            }, 1000);
-        }
-    });
-    
-    // Number counter animation
-    $('.us_counter').each(function() {
-        var $this = $(this);
-        var countTo = $this.attr('data-count');
-        $({ countNum: 0 }).animate({
-            countNum: countTo
-        }, {
-            duration: 2000,
-            easing: 'swing',
-            step: function() {
-                $this.text(Math.floor(this.countNum));
-            },
-            complete: function() {
-                $this.text(this.countNum);
-            }
-        });
-    });
-    
-    // Parallax mouse effect
-    $('.parallax-mouse').on('mousemove', function(e) {
-        var x = (e.pageX / $(window).width()) - 0.5;
-        var y = (e.pageY / $(window).height()) - 0.5;
-        $(this).find('.parallax-layer').css({
-            'transform': 'translate(' + (x * 30) + 'px, ' + (y * 30) + 'px)'
-        });
-    });
-    
-});
-</script>
-```
-
-### Intersection Observer (Scroll Animations)
-```javascript
-<script>
-// Fade in elements on scroll
-const observerOptions = {
-    threshold: 0.1,
-    rootMargin: '0px 0px -100px 0px'
-};
-
-const observer = new IntersectionObserver(function(entries) {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-            observer.unobserve(entry.target);
-        }
-    });
-}, observerOptions);
-
-document.querySelectorAll('.animate-on-scroll').forEach(el => {
-    observer.observe(el);
-});
-</script>
-
-<style>
-.animate-on-scroll {
-    opacity: 0;
-    transform: translateY(30px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
-}
-.animate-on-scroll.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-</style>
 ```
 
 ---
@@ -1652,7 +914,7 @@ document.querySelectorAll('.animate-on-scroll').forEach(el => {
 #### Export Single Page:
 1. Edit page in WPBakery Backend Editor
 2. Click "Classic Mode" tab
-3. Copy all shortcode content
+3. Copy all shortcode content (compact format)
 4. Save to version control
 
 #### Import Page:
@@ -1661,13 +923,6 @@ document.querySelectorAll('.animate-on-scroll').forEach(el => {
 3. Paste shortcode content
 4. Update to Frontend/Backend editor
 5. Publish
-
-### Reusable Templates
-
-Create at **Templates > Section Templates**:
-- Save frequently used sections
-- Export/import across sites
-- Version control JSON exports
 
 ### Child Theme Development
 
@@ -1694,19 +949,6 @@ function impreza_child_enqueue_styles() {
         wp_get_theme()->get('Version')
     );
 }
-
-// Custom shortcodes
-add_shortcode('custom_element', 'custom_element_function');
-function custom_element_function($atts) {
-    $atts = shortcode_atts(array(
-        'title' => 'Default Title',
-        'color' => '#000000'
-    ), $atts);
-    
-    return '<div class="custom-element" style="color:' . esc_attr($atts['color']) . '">' 
-           . esc_html($atts['title']) 
-           . '</div>';
-}
 ?>
 ```
 
@@ -1716,42 +958,27 @@ function custom_element_function($atts) {
 
 ### Sanitization & Escaping
 
-Always sanitize user inputs:
 ```php
-// Sanitize text input
 $clean_text = sanitize_text_field($_POST['input']);
-
-// Sanitize URL
 $clean_url = esc_url($_POST['url']);
-
-// Sanitize email
 $clean_email = sanitize_email($_POST['email']);
-
-// Escape output
 echo esc_html($user_content);
 echo esc_attr($attribute_value);
-echo esc_url($url);
 ```
 
 ### Nonce Verification
-```php
-// Add nonce to form
-wp_nonce_field('custom_form_action', 'custom_form_nonce');
 
-// Verify nonce
+```php
+wp_nonce_field('custom_form_action', 'custom_form_nonce');
 if (!wp_verify_nonce($_POST['custom_form_nonce'], 'custom_form_action')) {
     wp_die('Security check failed');
 }
 ```
 
 ### SQL Injection Prevention
+
 ```php
 global $wpdb;
-
-// WRONG
-$results = $wpdb->get_results("SELECT * FROM table WHERE id = " . $_GET['id']);
-
-// RIGHT
 $results = $wpdb->get_results($wpdb->prepare(
     "SELECT * FROM table WHERE id = %d",
     $_GET['id']
@@ -1762,207 +989,51 @@ $results = $wpdb->get_results($wpdb->prepare(
 
 ## Accessibility (a11y) Guidelines
 
-### ARIA Labels
+### Semantic HTML
+Use proper heading hierarchy — always via `[vc_column_text]`:
 ```
-[us_btn 
-  text="Submit"
-  aria_label="Submit contact form"
-]
-
-[us_icon 
-  icon="fas|search"
-  aria_label="Search icon"
-]
-```
-
-### Keyboard Navigation
-Ensure all interactive elements are keyboard accessible:
-```css
-.us-btn:focus,
-.us-iconbox:focus {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-}
+[vc_column_text]<h1>Main Page Title</h1>[/vc_column_text]
+[vc_column_text]<h2>Section Title</h2>[/vc_column_text]
+[vc_column_text]<h3>Subsection Title</h3>[/vc_column_text]
 ```
 
 ### Color Contrast
-Maintain WCAG AA standards (4.5:1 for normal text):
-```css
-/* Good contrast */
-.text-primary {
-    color: #1E88E5; /* on white background */
-}
-
-/* Check contrast ratios at: */
-/* https://webaim.org/resources/contrastchecker/ */
-```
+Maintain WCAG AA standards (4.5:1 for normal text).
 
 ### Alt Text for Images
 ```
-[us_image 
-  image="12345"
-  alt="Descriptive alt text for screen readers"
-]
-```
-
-### Semantic HTML
-Use proper heading hierarchy:
-```
-[us_heading tag="h1" title="Main Page Title"]
-[us_heading tag="h2" title="Section Title"]
-[us_heading tag="h3" title="Subsection Title"]
+[us_image image="12345" alt="Descriptive alt text for screen readers"]
 ```
 
 ---
 
-## SEO Optimization
+## Troubleshooting
 
-### Schema Markup
+### Common Issues & Solutions
 
-Impreza includes automatic Schema.org markup. Enhance with custom schemas:
+#### Issue: CSS not applying
+**Cause**: Using old `.vc_custom_xxx{}` format
+**Solution**: Use Impreza JSON URL-encoded format: `css="%7B%22default%22%3A%7B...%7D%7D"`
 
-```html
-[us_html]
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "LocalBusiness",
-  "name": "Your Business Name",
-  "image": "https://example.com/logo.jpg",
-  "@id": "https://example.com",
-  "url": "https://example.com",
-  "telephone": "+1-555-0123",
-  "address": {
-    "@type": "PostalAddress",
-    "streetAddress": "123 Main St",
-    "addressLocality": "City",
-    "addressRegion": "State",
-    "postalCode": "12345",
-    "addressCountry": "US"
-  }
-}
-</script>
-[/us_html]
-```
+#### Issue: Shortcodes not rendering after paste in Classic Mode
+**Cause**: Multi-line formatted shortcodes with indentation
+**Solution**: Use compact single-line format
 
-### Meta Tags
+#### Issue: Buttons not styled correctly
+**Cause**: Using `text=` or `style="raised"`
+**Solution**: Use `label=` and numeric style `style="2"`
 
-Set in **Impreza > Theme Options > SEO** or use Yoast SEO/Rank Math plugin.
+#### Issue: Columns Not Responsive
+**Cause**: Using multiple `vc_row` instead of `vc_row_inner`
+**Solution**: Use `[vc_row_inner columns="3" tablets_columns="2"]`
 
-### Heading Structure
+#### Issue: Content not editable in builder
+**Cause**: Using `[us_html]` for standard elements
+**Solution**: Replace with native Impreza shortcodes
 
-Maintain proper hierarchy:
-- One H1 per page (page title)
-- H2 for main sections
-- H3 for subsections
-- Never skip levels
-
-### Performance = SEO
-
-- Page speed impacts rankings
-- Use caching, optimization plugins
-- Optimize images (WebP, lazy load)
-- Minimize HTTP requests
-- Enable GZIP compression
-
----
-
-## Quick Tips & Tricks
-
-### 1. Copy Sections from Demos
-Visit Impreza demo sites → Right-click section → Inspect → Find `vc_row` → Copy entire shortcode → Paste in your page
-
-### 2. Use Section Templates
-Save commonly used sections to **Templates > Section Templates** → Reuse across pages
-
-### 3. Global Color Palette
-Define colors once in **Theme Options > Colors** → Use across all elements
-
-### 4. Custom Fonts
-Upload WOFF2 fonts at **Theme Options > Typography > Uploaded Fonts** → Faster than Google Fonts
-
-### 5. Sticky Elements
-```
-[vc_column el_class="sticky-sidebar"]
-  <!-- Sidebar content -->
-[/vc_column]
-```
-
-CSS:
-```css
-@media (min-width: 1024px) {
-    .sticky-sidebar {
-        position: sticky;
-        top: 100px;
-    }
-}
-```
-
-### 6. Custom Cursor
-```css
-body {
-    cursor: url('cursor.png'), auto;
-}
-a:hover {
-    cursor: url('pointer.png'), pointer;
-}
-```
-
-### 7. Scroll Progress Bar
-```javascript
-<script>
-window.addEventListener('scroll', function() {
-    var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
-    var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-    var scrolled = (winScroll / height) * 100;
-    document.querySelector('.progress-bar').style.width = scrolled + "%";
-});
-</script>
-
-<style>
-.progress-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background: #f1f1f1;
-    z-index: 9999;
-}
-.progress-bar {
-    height: 3px;
-    background: var(--color-primary);
-    width: 0%;
-}
-</style>
-```
-
-### 8. Lazy Load Background Images
-```
-[vc_row 
-  el_class="lazy-bg"
-  data-bg="https://example.com/image.jpg"
-]
-```
-
-JavaScript:
-```javascript
-document.addEventListener('DOMContentLoaded', function() {
-    var lazyBgs = document.querySelectorAll('.lazy-bg');
-    var observer = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
-            if (entry.isIntersecting) {
-                var bg = entry.target.dataset.bg;
-                entry.target.style.backgroundImage = 'url(' + bg + ')';
-                observer.unobserve(entry.target);
-            }
-        });
-    });
-    lazyBgs.forEach(function(bg) {
-        observer.observe(bg);
-    });
-});
-```
+#### Issue: Typography looks wrong
+**Cause**: Overriding font styles that should come from the theme
+**Solution**: Remove font-size, font-weight, font-family from headings; let theme handle it
 
 ---
 
@@ -1975,77 +1046,79 @@ document.addEventListener('DOMContentLoaded', function() {
 - **Changelog**: https://help.us-themes.com/impreza/changelog/
 
 ### Recommended Plugins
-- **WP Rocket** - Caching & performance
-- **Smush** - Image optimization
-- **Yoast SEO** / **Rank Math** - SEO optimization
-- **WP Mail SMTP** - Email deliverability
-- **UpdraftPlus** - Backups
-- **Wordfence** - Security
-
-### Learning Resources
-- WordPress Codex: https://codex.wordpress.org/
-- WPBakery Tutorials: https://wpbakery.com/features/
-- Impreza Video Tutorials: Built into theme dashboard
-
-### Community
-- ThemeForest Comments: Product support & discussion
-- WordPress.org Forums: General WordPress help
-- Stack Overflow: Coding questions
+- **WP Rocket** — Caching & performance
+- **Smush** — Image optimization
+- **Yoast SEO** / **Rank Math** — SEO optimization
+- **WP Mail SMTP** — Email deliverability
+- **UpdraftPlus** — Backups
+- **Wordfence** — Security
 
 ---
 
 ## Best Practices Summary
 
 ### DO:
-✅ Use Impreza's performance optimization settings
-✅ Always create responsive layouts with device-specific settings
-✅ Leverage built-in elements before custom code
-✅ Use Live Builder for best performance
+✅ Use Impreza JSON URL-encoded CSS format (`%7B%22default%22%3A%7B...%7D%7D`)
+✅ Use `[vc_column_text]` with HTML tags for headings (h1–h6)
+✅ Use `[us_text]` for short labels, badges, and simple text
+✅ Use `label=` for button text, numeric `style=` for button style
+✅ Use `[vc_row_inner]` + `[vc_column_inner]` for grids
+✅ Use `width="custom" width_custom="Xpx"` for row width control
+✅ Let the theme handle typography (sizes, weights, families)
+✅ Use native Impreza elements for all standard components
+✅ Output compact single-line code for Classic Mode
+✅ List ignored animations/effects in a Notes section
+✅ Use `[us_separator]` for spacing between elements
+✅ Use `[us_hwrapper]` for horizontal layouts (buttons, author info)
+✅ Use `[us_vwrapper]` for vertical stacking with controlled gaps
 ✅ Test on multiple devices and browsers
 ✅ Optimize images before upload
-✅ Use caching plugins
 ✅ Create child theme for customizations
-✅ Use section templates for reusable content
-✅ Follow semantic HTML structure
-✅ Implement proper heading hierarchy
-✅ Add alt text to all images
-✅ Sanitize all user inputs
-✅ Use CSS variables for theming
-✅ Document custom code
 
 ### DON'T:
-❌ Load unnecessary Google Fonts
-❌ Use inline styles excessively
-❌ Forget device-specific responsive settings
-❌ Skip image optimization
-❌ Use too many heavy plugins
-❌ Modify parent theme files directly
-❌ Ignore caching configuration
-❌ Overcomplicate layouts with excessive nesting
-❌ Use outdated PHP functions
-❌ Hardcode values that should be dynamic
-❌ Ignore accessibility guidelines
-❌ Skip security best practices
-❌ Forget to test thoroughly before launch
+❌ Use `.vc_custom_xxx{}` CSS format — it's broken in Impreza
+❌ Use `[us_html]` for standard elements (icons, cards, images, stars)
+❌ Extract font sizes/weights/families from Figma for standard tags
+❌ Use `text=` for buttons (use `label=`)
+❌ Use `style="raised"` for buttons (use numeric style IDs)
+❌ Use multiple `vc_row` to create a single grid
+❌ Use CSS padding to control row width
+❌ Format shortcodes with multi-line indentation
+❌ Implement animations/hover effects from Figma designs
+❌ Use inline `<img>`, `<i>`, `<div class="card">` HTML for standard components
+❌ Use `[us_heading]` for headings — use `[vc_column_text]` with HTML tags instead
+❌ Override theme typography in generated code
 
 ---
 
-## Conclusion
+## CSS Encoding Quick Reference
 
-This skill equips you to transform any design—whether described, visual, or from Figma—into production-ready WordPress code using the Impreza theme and WPBakery Page Builder. Follow the patterns, use the comprehensive element library, optimize for performance, and always prioritize responsive design and accessibility.
+For quick encoding of common CSS properties:
 
-**Remember**: Impreza's strength lies in its flexibility and optimization. Use the Live Builder for the best performance, leverage built-in elements, and only use custom code when absolutely necessary.
+| JSON | URL-encoded |
+|---|---|
+| `{"default":{"text-align":"center"}}` | `%7B%22default%22%3A%7B%22text-align%22%3A%22center%22%7D%7D` |
+| `{"default":{"background-color":"#F9FAFB"}}` | `%7B%22default%22%3A%7B%22background-color%22%3A%22%23F9FAFB%22%7D%7D` |
+| `{"default":{"color":"#ffffff","text-align":"center","background-color":"#155DFC","border-radius":"20px"}}` | `%7B%22default%22%3A%7B%22color%22%3A%22%23ffffff%22%2C%22text-align%22%3A%22center%22%2C%22background-color%22%3A%22%23155DFC%22%2C%22border-radius%22%3A%2220px%22%7D%7D` |
+| `{"default":{"width":"48px","height":"48px"}}` | `%7B%22default%22%3A%7B%22width%22%3A%2248px%22%2C%22height%22%3A%2248px%22%7D%7D` |
+| `{"default":{"font-size":"14px","font-weight":"700"}}` | `%7B%22default%22%3A%7B%22font-size%22%3A%2214px%22%2C%22font-weight%22%3A%22700%22%7D%7D` |
+| `{"default":{"box-shadow-h-offset":"0","box-shadow-v-offset":"1px","box-shadow-blur":"3px","box-shadow-spread":"0","box-shadow-color":"#000000"}}` | `%7B%22default%22%3A%7B%22box-shadow-h-offset%22%3A%220%22%2C%22box-shadow-v-offset%22%3A%221px%22%2C%22box-shadow-blur%22%3A%223px%22%2C%22box-shadow-spread%22%3A%220%22%2C%22box-shadow-color%22%3A%22%23000000%22%7D%7D` |
 
 ---
 
 ## Version History
 
-- **v1.0.0** (2026-02-19): Initial comprehensive skill release
-  - Complete element reference
-  - Responsive design patterns
-  - Performance optimization
-  - Design-to-code workflows
-  - Best practices & security
-  - 63+ Impreza elements documented
-  - WPBakery 8.7.2 compatibility
-  - Impreza 8.43.1 compatibility
+- **v2.0.0** (2026-02-20): Major rewrite — corrected critical errors
+  - Fixed CSS format: Impreza JSON URL-encoded instead of `.vc_custom_xxx{}`
+  - Fixed typography: theme handles h1–h6 styling, not generated code
+  - Fixed buttons: `label` instead of `text`, numeric `style` values
+  - Fixed grids: `vc_row_inner`/`vc_column_inner` instead of multiple `vc_row`
+  - Fixed row width: native `width`/`width_custom` parameters
+  - Fixed Classic Mode output: compact single-line format
+  - Removed `[us_html]` abuse — all examples use native shortcodes
+  - Added complete real-world examples from manual testing
+  - Added CSS encoding quick reference table
+  - Added comprehensive Critical Rules section
+  - Added Typography Decision Guide
+  - Animations/effects: ignored in code, noted separately
+- **v1.0.0** (2026-02-19): Initial release
